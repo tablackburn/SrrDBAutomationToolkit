@@ -186,6 +186,11 @@ function Search-SatRelease {
             throw "srrDB API error: $($result.error)"
         }
 
+        # Output total results count via Information stream
+        if ($result.resultsCount) {
+            Write-Information "Total results: $($result.resultsCount)"
+        }
+
         # Process search results
         if ($result.results -and $result.results.Count -gt 0) {
             $releases = @()
