@@ -30,7 +30,7 @@ foreach ($file in $stagedFiles) {
         $results = Invoke-ScriptAnalyzer -Path $file -Severity Error, Warning -ExcludeRule PSUseShouldProcessForStateChangingFunctions
 
         if ($results) {
-            Write-Host "`nIssues in $file:" -ForegroundColor Red
+            Write-Host "`nIssues in ${file}:" -ForegroundColor Red
             $results | ForEach-Object {
                 Write-Host "  Line $($_.Line): [$($_.Severity)] $($_.RuleName) - $($_.Message)" -ForegroundColor Yellow
             }
