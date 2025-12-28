@@ -37,6 +37,43 @@ function Search-SatRelease {
         Filter by the date the release was added to the database.
         Format: YYYY-MM-DD
 
+    .PARAMETER Foreign
+        If specified, only return foreign (non-English) releases.
+
+    .PARAMETER Confirmed
+        If specified, only return confirmed releases.
+
+    .PARAMETER RarHash
+        Filter by RAR file hash.
+
+    .PARAMETER ArchiveCrc
+        Filter by archive CRC value.
+
+    .PARAMETER ArchiveSize
+        Filter by archive size in bytes.
+
+    .PARAMETER InternetSubtitlesDbHash
+        Filter by Internet Subtitles Database (ISDb) hash.
+
+    .PARAMETER Compressed
+        If specified, only return compressed releases.
+
+    .PARAMETER Order
+        Sort order for results. Valid values:
+        date-asc, date-desc, release-asc, release-desc
+
+    .PARAMETER Country
+        Filter by country code (e.g., US, UK, DE).
+
+    .PARAMETER Language
+        Filter by language (e.g., English, German, French).
+
+    .PARAMETER SampleFilename
+        Filter by sample filename stored inside SRS (Sample Rescue Service) files.
+
+    .PARAMETER SampleCrc
+        Filter by CRC32 of the sample video stored inside SRS files.
+
     .PARAMETER MaxResults
         Maximum number of results to return. Default is all matching results.
         The function automatically paginates through all available results.
@@ -118,6 +155,63 @@ function Search-SatRelease {
         $Date,
 
         [Parameter(Mandatory = $false)]
+        [switch]
+        $Foreign,
+
+        [Parameter(Mandatory = $false)]
+        [switch]
+        $Confirmed,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $RarHash,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ArchiveCrc,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateRange(0, [long]::MaxValue)]
+        [long]
+        $ArchiveSize,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $InternetSubtitlesDbHash,
+
+        [Parameter(Mandatory = $false)]
+        [switch]
+        $Compressed,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('date-asc', 'date-desc', 'release-asc', 'release-desc')]
+        [string]
+        $Order,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Country,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Language,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SampleFilename,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SampleCrc,
+
+        [Parameter(Mandatory = $false)]
         [ValidateRange(1, [int]::MaxValue)]
         [int]
         $MaxResults
@@ -150,6 +244,42 @@ function Search-SatRelease {
         }
         if ($Date) {
             $searchQueryParams['Date'] = $Date
+        }
+        if ($Foreign) {
+            $searchQueryParams['Foreign'] = $true
+        }
+        if ($Confirmed) {
+            $searchQueryParams['Confirmed'] = $true
+        }
+        if ($RarHash) {
+            $searchQueryParams['RarHash'] = $RarHash
+        }
+        if ($ArchiveCrc) {
+            $searchQueryParams['ArchiveCrc'] = $ArchiveCrc
+        }
+        if ($PSBoundParameters.ContainsKey('ArchiveSize')) {
+            $searchQueryParams['ArchiveSize'] = $ArchiveSize
+        }
+        if ($InternetSubtitlesDbHash) {
+            $searchQueryParams['InternetSubtitlesDbHash'] = $InternetSubtitlesDbHash
+        }
+        if ($Compressed) {
+            $searchQueryParams['Compressed'] = $true
+        }
+        if ($Order) {
+            $searchQueryParams['Order'] = $Order
+        }
+        if ($Country) {
+            $searchQueryParams['Country'] = $Country
+        }
+        if ($Language) {
+            $searchQueryParams['Language'] = $Language
+        }
+        if ($SampleFilename) {
+            $searchQueryParams['SampleFilename'] = $SampleFilename
+        }
+        if ($SampleCrc) {
+            $searchQueryParams['SampleCrc'] = $SampleCrc
         }
 
         $baseSearchPath = ConvertTo-SatSearchQuery @searchQueryParams

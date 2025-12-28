@@ -143,4 +143,102 @@ Describe 'Search-SatRelease' {
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context 'New search filters' {
+        It 'Should call API with Foreign filter' {
+            Search-SatRelease -Query 'Test' -Foreign
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'foreign:yes'
+            }
+        }
+
+        It 'Should call API with Confirmed filter' {
+            Search-SatRelease -Query 'Test' -Confirmed
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'confirmed:yes'
+            }
+        }
+
+        It 'Should call API with RarHash filter' {
+            Search-SatRelease -Query 'Test' -RarHash 'ABC123'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'rarhash:ABC123'
+            }
+        }
+
+        It 'Should call API with ArchiveCrc filter' {
+            Search-SatRelease -Query 'Test' -ArchiveCrc 'DEADBEEF'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'archive-crc:DEADBEEF'
+            }
+        }
+
+        It 'Should call API with ArchiveSize filter' {
+            Search-SatRelease -Query 'Test' -ArchiveSize 1048576
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'archive-size:1048576'
+            }
+        }
+
+        It 'Should call API with InternetSubtitlesDbHash filter' {
+            Search-SatRelease -Query 'Test' -InternetSubtitlesDbHash 'HASH123'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'isdbhash:HASH123'
+            }
+        }
+
+        It 'Should call API with Compressed filter' {
+            Search-SatRelease -Query 'Test' -Compressed
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'compressed:yes'
+            }
+        }
+
+        It 'Should call API with Order filter' {
+            Search-SatRelease -Query 'Test' -Order 'date-desc'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'order:date-desc'
+            }
+        }
+
+        It 'Should call API with Country filter' {
+            Search-SatRelease -Query 'Test' -Country 'US'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'country:US'
+            }
+        }
+
+        It 'Should call API with Language filter' {
+            Search-SatRelease -Query 'Test' -Language 'German'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'language:German'
+            }
+        }
+
+        It 'Should call API with SampleFilename filter' {
+            Search-SatRelease -Query 'Test' -SampleFilename 'sample.avi'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'store-real-filename:sample.avi'
+            }
+        }
+
+        It 'Should call API with SampleCrc filter' {
+            Search-SatRelease -Query 'Test' -SampleCrc 'ABCD1234'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'store-real-crc:ABCD1234'
+            }
+        }
+    }
+
+    Context 'Combined new and existing filters' {
+        It 'Should combine multiple new filters' {
+            Search-SatRelease -Query 'Test' -Foreign -Confirmed -Order 'date-desc' -Country 'DE'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'foreign:yes' -and
+                $Uri -match 'confirmed:yes' -and
+                $Uri -match 'order:date-desc' -and
+                $Uri -match 'country:DE'
+            }
+        }
+    }
 }

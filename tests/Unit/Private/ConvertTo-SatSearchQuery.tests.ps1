@@ -102,4 +102,110 @@ Describe 'ConvertTo-SatSearchQuery' {
             $result | Should -Match 'group:SPARKS'
         }
     }
+
+    Context 'Foreign parameter' {
+        It 'Should add foreign:yes when Foreign is specified' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Foreign
+            $result | Should -Match 'foreign:yes'
+        }
+    }
+
+    Context 'Confirmed parameter' {
+        It 'Should add confirmed:yes when Confirmed is specified' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Confirmed
+            $result | Should -Match 'confirmed:yes'
+        }
+    }
+
+    Context 'RarHash parameter' {
+        It 'Should add rarhash filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -RarHash 'ABC123'
+            $result | Should -Match 'rarhash:ABC123'
+        }
+    }
+
+    Context 'ArchiveCrc parameter' {
+        It 'Should add archive-crc filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -ArchiveCrc 'DEADBEEF'
+            $result | Should -Match 'archive-crc:DEADBEEF'
+        }
+    }
+
+    Context 'ArchiveSize parameter' {
+        It 'Should add archive-size filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -ArchiveSize 1048576
+            $result | Should -Match 'archive-size:1048576'
+        }
+
+        It 'Should add archive-size filter when size is 0' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -ArchiveSize 0
+            $result | Should -Match 'archive-size:0'
+        }
+    }
+
+    Context 'InternetSubtitlesDbHash parameter' {
+        It 'Should add isdbhash filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -InternetSubtitlesDbHash 'HASH123'
+            $result | Should -Match 'isdbhash:HASH123'
+        }
+    }
+
+    Context 'Compressed parameter' {
+        It 'Should add compressed:yes when Compressed is specified' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Compressed
+            $result | Should -Match 'compressed:yes'
+        }
+    }
+
+    Context 'Order parameter' {
+        It 'Should add order filter for date-desc' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Order 'date-desc'
+            $result | Should -Match 'order:date-desc'
+        }
+
+        It 'Should add order filter for release-asc' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Order 'release-asc'
+            $result | Should -Match 'order:release-asc'
+        }
+    }
+
+    Context 'Country parameter' {
+        It 'Should add country filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Country 'US'
+            $result | Should -Match 'country:US'
+        }
+    }
+
+    Context 'Language parameter' {
+        It 'Should add language filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Language 'German'
+            $result | Should -Match 'language:German'
+        }
+    }
+
+    Context 'SampleFilename parameter' {
+        It 'Should add store-real-filename filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -SampleFilename 'sample.avi'
+            $result | Should -Match 'store-real-filename:sample.avi'
+        }
+    }
+
+    Context 'SampleCrc parameter' {
+        It 'Should add store-real-crc filter' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -SampleCrc 'ABCD1234'
+            $result | Should -Match 'store-real-crc:ABCD1234'
+        }
+    }
+
+    Context 'URL encoding for safety' {
+        It 'Should URL-encode special characters in RarHash' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -RarHash 'hash/with/slashes'
+            $result | Should -Match 'rarhash:hash%2Fwith%2Fslashes'
+        }
+
+        It 'Should URL-encode special characters in Country' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Country 'test value'
+            $result | Should -Match 'country:test%20value'
+        }
+    }
 }
