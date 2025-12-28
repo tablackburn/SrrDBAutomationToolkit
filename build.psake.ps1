@@ -18,7 +18,7 @@ properties {
         "$PSScriptRoot/SrrDBAutomationToolkit/Public/*.ps1"
         "$PSScriptRoot/SrrDBAutomationToolkit/Private/*.ps1"
     )
-    $PSBPreference.Test.CodeCoverage.Threshold = 0.70  # 70% minimum coverage
+    $PSBPreference.Test.CodeCoverage.Threshold = 0  # Threshold enforced by Codecov
     $PSBPreference.Test.CodeCoverage.OutputFile = [IO.Path]::Combine($PSScriptRoot, 'out', 'codeCoverage.xml')
     $PSBPreference.Test.CodeCoverage.OutputFileFormat = 'JaCoCo'
 }
