@@ -218,71 +218,71 @@ function Search-SatRelease {
     )
 
     try {
-        # Build base search query params (without skip)
-        $searchQueryParams = @{}
+        # Build base search query parameters (without skip)
+        $searchQueryParameters = @{}
 
         if ($Query) {
-            $searchQueryParams['Query'] = $Query
+            $searchQueryParameters['Query'] = $Query
         }
         if ($ReleaseName) {
-            $searchQueryParams['ReleaseName'] = $ReleaseName
+            $searchQueryParameters['ReleaseName'] = $ReleaseName
         }
         if ($Group) {
-            $searchQueryParams['Group'] = $Group
+            $searchQueryParameters['Group'] = $Group
         }
         if ($Category) {
-            $searchQueryParams['Category'] = $Category
+            $searchQueryParameters['Category'] = $Category
         }
         if ($ImdbId) {
-            $searchQueryParams['ImdbId'] = $ImdbId
+            $searchQueryParameters['ImdbId'] = $ImdbId
         }
         if ($HasNfo) {
-            $searchQueryParams['HasNfo'] = $true
+            $searchQueryParameters['HasNfo'] = $true
         }
         if ($HasSrs) {
-            $searchQueryParams['HasSrs'] = $true
+            $searchQueryParameters['HasSrs'] = $true
         }
         if ($Date) {
-            $searchQueryParams['Date'] = $Date
+            $searchQueryParameters['Date'] = $Date
         }
         if ($Foreign) {
-            $searchQueryParams['Foreign'] = $true
+            $searchQueryParameters['Foreign'] = $true
         }
         if ($Confirmed) {
-            $searchQueryParams['Confirmed'] = $true
+            $searchQueryParameters['Confirmed'] = $true
         }
         if ($RarHash) {
-            $searchQueryParams['RarHash'] = $RarHash
+            $searchQueryParameters['RarHash'] = $RarHash
         }
         if ($ArchiveCrc) {
-            $searchQueryParams['ArchiveCrc'] = $ArchiveCrc
+            $searchQueryParameters['ArchiveCrc'] = $ArchiveCrc
         }
         if ($PSBoundParameters.ContainsKey('ArchiveSize')) {
-            $searchQueryParams['ArchiveSize'] = $ArchiveSize
+            $searchQueryParameters['ArchiveSize'] = $ArchiveSize
         }
         if ($InternetSubtitlesDbHash) {
-            $searchQueryParams['InternetSubtitlesDbHash'] = $InternetSubtitlesDbHash
+            $searchQueryParameters['InternetSubtitlesDbHash'] = $InternetSubtitlesDbHash
         }
         if ($Compressed) {
-            $searchQueryParams['Compressed'] = $true
+            $searchQueryParameters['Compressed'] = $true
         }
         if ($Order) {
-            $searchQueryParams['Order'] = $Order
+            $searchQueryParameters['Order'] = $Order
         }
         if ($Country) {
-            $searchQueryParams['Country'] = $Country
+            $searchQueryParameters['Country'] = $Country
         }
         if ($Language) {
-            $searchQueryParams['Language'] = $Language
+            $searchQueryParameters['Language'] = $Language
         }
         if ($SampleFilename) {
-            $searchQueryParams['SampleFilename'] = $SampleFilename
+            $searchQueryParameters['SampleFilename'] = $SampleFilename
         }
         if ($SampleCrc) {
-            $searchQueryParams['SampleCrc'] = $SampleCrc
+            $searchQueryParameters['SampleCrc'] = $SampleCrc
         }
 
-        $baseSearchPath = ConvertTo-SatSearchQuery @searchQueryParams
+        $baseSearchPath = ConvertTo-SatSearchQuery @searchQueryParameters
 
         if (-not $baseSearchPath) {
             throw "No search criteria specified. Please provide at least a Query or ReleaseName."
@@ -355,6 +355,7 @@ function Search-SatRelease {
         }
     }
     catch {
-        throw "Failed to search srrDB: $($_.Exception.Message)"
+        $errorRecord = $_
+        throw "Failed to search srrDB: $($errorRecord.Exception.Message)"
     }
 }

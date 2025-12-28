@@ -68,7 +68,7 @@ function Get-SatRelease {
             }
 
             # Build release object
-            $releaseObj = [PSCustomObject]@{
+            $releaseObject = [PSCustomObject]@{
                 PSTypeName    = 'SrrDBAutomationToolkit.Release'
                 Name          = $result.name
                 Files         = $result.files
@@ -79,10 +79,11 @@ function Get-SatRelease {
                 HasSrs        = [bool]($result.hasSRS -eq 'yes' -or $result.srs)
             }
 
-            $releaseObj
+            $releaseObject
         }
         catch {
-            throw "Failed to get release details for '$ReleaseName': $($_.Exception.Message)"
+            $errorRecord = $_
+            throw "Failed to get release details for '$ReleaseName': $($errorRecord.Exception.Message)"
         }
     }
 }

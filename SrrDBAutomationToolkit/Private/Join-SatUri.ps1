@@ -68,6 +68,7 @@ function Join-SatUri {
         return $uri
     }
     catch {
-        throw "Failed to join URI: $($_.Exception.Message)"
+        $errorRecord = $_
+        throw "Failed to join URI: $($errorRecord.Exception.Message)"
     }
 }

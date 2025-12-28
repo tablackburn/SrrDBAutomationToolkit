@@ -75,13 +75,13 @@ function Get-SatSrr {
             Write-Verbose "Downloading SRR file: $downloadUrl"
 
             if ($PSCmdlet.ShouldProcess($ReleaseName, "Download SRR file to $filePath")) {
-                $webRequestParams = @{
+                $webRequestParameters = @{
                     Uri         = $downloadUrl
                     OutFile     = $filePath
                     ErrorAction = 'Stop'
                 }
 
-                Invoke-WebRequest @webRequestParams
+                Invoke-WebRequest @webRequestParameters
 
                 Write-Verbose "SRR file saved to: $filePath"
 
@@ -91,7 +91,8 @@ function Get-SatSrr {
             }
         }
         catch {
-            throw "Failed to download SRR for '$ReleaseName': $($_.Exception.Message)"
+            $errorRecord = $_
+            throw "Failed to download SRR for '$ReleaseName': $($errorRecord.Exception.Message)"
         }
     }
 }

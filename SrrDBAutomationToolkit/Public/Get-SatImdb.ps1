@@ -70,7 +70,7 @@ function Get-SatImdb {
             }
 
             # Build IMDB info object
-            $imdbObj = [PSCustomObject]@{
+            $imdbObject = [PSCustomObject]@{
                 PSTypeName = 'SrrDBAutomationToolkit.ImdbInfo'
                 Release    = $ReleaseName
                 ImdbId     = $result.imdbID
@@ -83,10 +83,11 @@ function Get-SatImdb {
                 Actors     = $result.actors
             }
 
-            $imdbObj
+            $imdbObject
         }
         catch {
-            throw "Failed to get IMDB info for '$ReleaseName': $($_.Exception.Message)"
+            $errorRecord = $_
+            throw "Failed to get IMDB info for '$ReleaseName': $($errorRecord.Exception.Message)"
         }
     }
 }

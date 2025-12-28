@@ -142,7 +142,8 @@ function Get-SatNfo {
             }
         }
         catch {
-            throw "Failed to get NFO for '$ReleaseName': $($_.Exception.Message)"
+            $errorRecord = $_
+            throw "Failed to get NFO for '$ReleaseName': $($errorRecord.Exception.Message)"
         }
     }
 }
