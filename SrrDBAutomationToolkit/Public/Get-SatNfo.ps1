@@ -95,9 +95,9 @@ function Get-SatNfo {
                 return
             }
 
-            # Get NFO details
-            $nfoFile = $result.nfo
-            $nfoLink = $result.nfolink
+            # Get NFO details (API returns arrays, take first element)
+            $nfoFile = if ($result.nfo -is [array]) { $result.nfo[0] } else { $result.nfo }
+            $nfoLink = if ($result.nfolink -is [array]) { $result.nfolink[0] } else { $result.nfolink }
 
             if (-not $nfoLink -and $nfoFile) {
                 # Construct download URL if not provided
