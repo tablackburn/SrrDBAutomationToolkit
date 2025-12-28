@@ -39,7 +39,7 @@ function Search-SatRelease {
 
     .PARAMETER Skip
         Number of results to skip for pagination. Use this to fetch subsequent pages
-        of results. The API returns results in batches (page size is API-dependent).
+        of results. The API returns 45 results per page.
 
     .PARAMETER MaxResults
         Maximum number of results to return (1-500). Default is all results from the
