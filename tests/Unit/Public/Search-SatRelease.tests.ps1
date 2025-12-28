@@ -13,6 +13,7 @@ Describe 'Search-SatRelease' {
     BeforeAll {
         Mock Invoke-SatApi {
             return @{
+                resultsCount = 2
                 results = @(
                     @{
                         release = 'Test.Release.2023-GROUP'
@@ -97,12 +98,34 @@ Describe 'Search-SatRelease' {
         }
     }
 
-    Context 'Skip parameter' {
-        It 'Should call API with skip filter' {
-            Search-SatRelease -Query 'Test' -Skip 100
-            Should -Invoke Invoke-SatApi -ParameterFilter {
-                $Uri -match 'skip:100'
+    Context 'Pagination' {
+        It 'Should automatically paginate through all results' {
+            $callCount = 0
+            Mock Invoke-SatApi {
+                $callCount++
+                if ($Uri -notmatch 'skip:') {
+                    # First page
+                    return @{
+                        resultsCount = 50
+                        results = @(1..45 | ForEach-Object {
+                            @{ release = "Release.$_"; date = '2023-01-01'; hasNFO = 'yes'; hasSRS = 'no' }
+                        })
+                    }
+                }
+                else {
+                    # Second page (partial)
+                    return @{
+                        resultsCount = 50
+                        results = @(46..50 | ForEach-Object {
+                            @{ release = "Release.$_"; date = '2023-01-01'; hasNFO = 'yes'; hasSRS = 'no' }
+                        })
+                    }
+                }
             }
+
+            $results = Search-SatRelease -Query 'Test'
+            $results | Should -HaveCount 50
+            Should -Invoke Invoke-SatApi -Times 2
         }
     }
 
@@ -115,7 +138,7 @@ Describe 'Search-SatRelease' {
 
     Context 'Empty results' {
         It 'Should handle empty results gracefully' {
-            Mock Invoke-SatApi { return @{ results = @() } }
+            Mock Invoke-SatApi { return @{ resultsCount = 0; results = @() } }
             $results = Search-SatRelease -Query 'NonExistent'
             $results | Should -BeNullOrEmpty
         }

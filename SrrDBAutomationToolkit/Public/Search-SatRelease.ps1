@@ -37,23 +37,15 @@ function Search-SatRelease {
         Filter by the date the release was added to the database.
         Format: YYYY-MM-DD
 
-    .PARAMETER Skip
-        Number of results to skip for pagination. Use this to fetch subsequent pages
-        of results. The API returns 45 results per page.
-
     .PARAMETER MaxResults
-        Maximum number of results to return (1-500). Default is all results from the
-        current page.
+        Maximum number of results to return. Default is all matching results.
+        The function automatically paginates through all available results.
 
     .EXAMPLE
         Search-SatRelease -Query "Harry Potter"
 
         Searches for releases containing "Harry" and "Potter" in the name.
-
-    .EXAMPLE
-        Search-SatRelease -Query "Matrix" -Skip 100
-
-        Searches for "Matrix" releases, skipping the first 100 results (page 2+).
+        Automatically fetches all matching results across multiple API pages.
 
     .EXAMPLE
         Search-SatRelease -Query "Inception" -Category "x264" -HasNfo
@@ -126,18 +118,13 @@ function Search-SatRelease {
         $Date,
 
         [Parameter(Mandatory = $false)]
-        [ValidateRange(0, [int]::MaxValue)]
-        [int]
-        $Skip,
-
-        [Parameter(Mandatory = $false)]
-        [ValidateRange(1, 500)]
+        [ValidateRange(1, [int]::MaxValue)]
         [int]
         $MaxResults
     )
 
     try {
-        # Build search query path
+        # Build base search query params (without skip)
         $searchQueryParams = @{}
 
         if ($Query) {
@@ -164,54 +151,74 @@ function Search-SatRelease {
         if ($Date) {
             $searchQueryParams['Date'] = $Date
         }
-        if ($PSBoundParameters.ContainsKey('Skip')) {
-            $searchQueryParams['Skip'] = $Skip
-        }
 
-        $searchPath = ConvertTo-SatSearchQuery @searchQueryParams
+        $baseSearchPath = ConvertTo-SatSearchQuery @searchQueryParams
 
-        if (-not $searchPath) {
+        if (-not $baseSearchPath) {
             throw "No search criteria specified. Please provide at least a Query or ReleaseName."
         }
 
-        $endpoint = "/search/$searchPath"
-        $uri = Join-SatUri -Endpoint $endpoint
+        # Pagination variables
+        $pageSize = 45
+        $skip = 0
+        $totalReturned = 0
+        $allResults = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-        Write-Verbose "Searching srrDB: $uri"
+        do {
+            # Build search path with skip for pagination
+            if ($skip -gt 0) {
+                $searchPath = "$baseSearchPath/skip:$skip"
+            }
+            else {
+                $searchPath = $baseSearchPath
+            }
 
-        $result = Invoke-SatApi -Uri $uri -ErrorAction 'Stop'
+            $endpoint = "/search/$searchPath"
+            $uri = Join-SatUri -Endpoint $endpoint
 
-        # Check for API errors
-        if ($result.error) {
-            throw "srrDB API error: $($result.error)"
-        }
+            Write-Verbose "Searching srrDB: $uri"
 
-        # Output total results count via Information stream
-        if ($result.resultsCount) {
-            Write-Information "Total results: $($result.resultsCount)"
-        }
+            $result = Invoke-SatApi -Uri $uri -ErrorAction 'Stop'
 
-        # Process search results
-        if ($result.results -and $result.results.Count -gt 0) {
-            $releases = @()
+            # Check for API errors
+            if ($result.error) {
+                throw "srrDB API error: $($result.error)"
+            }
 
-            foreach ($item in $result.results) {
-                $releaseObj = [PSCustomObject]@{
-                    PSTypeName = 'SrrDBAutomationToolkit.SearchResult'
-                    Release    = $item.release
-                    Date       = $item.date
-                    HasNfo     = [bool]($item.hasNFO -eq 'yes')
-                    HasSrs     = [bool]($item.hasSRS -eq 'yes')
+            # Process page results
+            if ($result.results -and $result.results.Count -gt 0) {
+                foreach ($item in $result.results) {
+                    # Check if we've hit MaxResults
+                    if ($MaxResults -and $allResults.Count -ge $MaxResults) {
+                        break
+                    }
+
+                    $releaseObj = [PSCustomObject]@{
+                        PSTypeName = 'SrrDBAutomationToolkit.SearchResult'
+                        Release    = $item.release
+                        Date       = $item.date
+                        HasNfo     = [bool]($item.hasNFO -eq 'yes')
+                        HasSrs     = [bool]($item.hasSRS -eq 'yes')
+                    }
+                    $allResults.Add($releaseObj)
                 }
-                $releases += $releaseObj
+
+                $totalReturned = $result.results.Count
+                $skip += $pageSize
+
+                Write-Verbose "Retrieved $($allResults.Count) of $($result.resultsCount) total results"
+            }
+            else {
+                $totalReturned = 0
             }
 
-            # Apply MaxResults if specified
-            if ($MaxResults -and $releases.Count -gt $MaxResults) {
-                $releases = $releases | Select-Object -First $MaxResults
-            }
+            # Continue if: we got a full page, haven't hit MaxResults, and there are more results
+        } while ($totalReturned -eq $pageSize -and
+                 (-not $MaxResults -or $allResults.Count -lt $MaxResults) -and
+                 $allResults.Count -lt $result.resultsCount)
 
-            $releases
+        if ($allResults.Count -gt 0) {
+            $allResults
         }
         else {
             Write-Verbose "No results found for the search query."

@@ -15,15 +15,13 @@ Searches for releases in the srrDB database.
 ### Query (Default)
 ```
 Search-SatRelease [-Query] <String> [-Group <String>] [-Category <String>] [-ImdbId <String>] [-HasNfo]
- [-HasSrs] [-Date <String>] [-Skip <Int32>] [-MaxResults <Int32>] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [-HasSrs] [-Date <String>] [-MaxResults <Int32>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### ReleaseName
 ```
 Search-SatRelease -ReleaseName <String> [-Group <String>] [-Category <String>] [-ImdbId <String>] [-HasNfo]
- [-HasSrs] [-Date <String>] [-Skip <Int32>] [-MaxResults <Int32>] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [-HasSrs] [-Date <String>] [-MaxResults <Int32>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -202,24 +200,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Skip
-Number of results to skip for pagination.
-Use this to fetch subsequent pages
-of results.
-The API returns 45 results per page.
-
-```yaml
-Type: Int32
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: 0
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
