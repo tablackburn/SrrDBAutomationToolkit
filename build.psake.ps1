@@ -13,7 +13,11 @@ properties {
     # Use absolute paths for test output (relative paths resolve from tests directory)
     $PSBPreference.Test.OutputFile = [IO.Path]::Combine($PSScriptRoot, 'out', 'testResults.xml')
     $PSBPreference.Test.OutputFormat = 'NUnitXml'
-    $PSBPreference.Test.CodeCoverage.Enabled = $false  # Disabled: default config tracks test helpers instead of module
+    $PSBPreference.Test.CodeCoverage.Enabled = $true
+    $PSBPreference.Test.CodeCoverage.Files = @(
+        "$PSScriptRoot/SrrDBAutomationToolkit/Public/*.ps1"
+        "$PSScriptRoot/SrrDBAutomationToolkit/Private/*.ps1"
+    )
     $PSBPreference.Test.CodeCoverage.Threshold = 0.70  # 70% minimum coverage
     $PSBPreference.Test.CodeCoverage.OutputFile = [IO.Path]::Combine($PSScriptRoot, 'out', 'codeCoverage.xml')
     $PSBPreference.Test.CodeCoverage.OutputFileFormat = 'JaCoCo'

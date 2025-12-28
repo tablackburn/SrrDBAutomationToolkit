@@ -32,6 +32,15 @@ jobs:
         New-Item -ItemType Directory -Path out -Force | Out-Null
         ./build.ps1 -Task Test -Bootstrap
 
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      if: success()
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: out/codeCoverage.xml
+        flags: ${{ matrix.os }}
+        fail_ci_if_error: false
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()

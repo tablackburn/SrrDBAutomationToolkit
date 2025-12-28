@@ -1,0 +1,35 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 70%
+        threshold: 5%
+    patch:
+      default:
+        target: 70%
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true
+
+flags:
+  ubuntu-latest:
+    paths:
+      - SrrDBAutomationToolkit/
+    carryforward: true
+  windows-latest:
+    paths:
+      - SrrDBAutomationToolkit/
+    carryforward: true
+  macOS-latest:
+    paths:
+      - SrrDBAutomationToolkit/
+    carryforward: true
+
+ignore:
+  - "tests/**"
+  - "Output/**"
+  - "out/**"
+  - "*.psake.ps1"
+  - "build.ps1"
