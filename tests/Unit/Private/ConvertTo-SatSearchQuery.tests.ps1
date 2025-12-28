@@ -81,6 +81,18 @@ Describe 'ConvertTo-SatSearchQuery' {
         }
     }
 
+    Context 'Skip parameter' {
+        It 'Should add skip filter for pagination' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Skip 100
+            $result | Should -Match 'skip:100'
+        }
+
+        It 'Should not add skip filter when Skip is 0' {
+            $result = ConvertTo-SatSearchQuery -Query 'test' -Skip 0
+            $result | Should -Not -Match 'skip:'
+        }
+    }
+
     Context 'Combined parameters' {
         It 'Should combine multiple filters' {
             $result = ConvertTo-SatSearchQuery -Query 'Inception' -Category 'x264' -HasNfo -Group 'SPARKS'

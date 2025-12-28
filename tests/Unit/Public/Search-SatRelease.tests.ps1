@@ -97,6 +97,15 @@ Describe 'Search-SatRelease' {
         }
     }
 
+    Context 'Skip parameter' {
+        It 'Should call API with skip filter' {
+            Search-SatRelease -Query 'Test' -Skip 100
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'skip:100'
+            }
+        }
+    }
+
     Context 'Error handling' {
         It 'Should throw on API error response' {
             Mock Invoke-SatApi { return @{ error = 'Rate limit exceeded' } }

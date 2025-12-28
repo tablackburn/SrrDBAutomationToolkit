@@ -37,13 +37,23 @@ function Search-SatRelease {
         Filter by the date the release was added to the database.
         Format: YYYY-MM-DD
 
+    .PARAMETER Skip
+        Number of results to skip for pagination. Use this to fetch subsequent pages
+        of results. The API returns results in batches (page size is API-dependent).
+
     .PARAMETER MaxResults
-        Maximum number of results to return (1-500). Default is all results.
+        Maximum number of results to return (1-500). Default is all results from the
+        current page.
 
     .EXAMPLE
         Search-SatRelease -Query "Harry Potter"
 
         Searches for releases containing "Harry" and "Potter" in the name.
+
+    .EXAMPLE
+        Search-SatRelease -Query "Matrix" -Skip 100
+
+        Searches for "Matrix" releases, skipping the first 100 results (page 2+).
 
     .EXAMPLE
         Search-SatRelease -Query "Inception" -Category "x264" -HasNfo
@@ -116,6 +126,11 @@ function Search-SatRelease {
         $Date,
 
         [Parameter(Mandatory = $false)]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $Skip,
+
+        [Parameter(Mandatory = $false)]
         [ValidateRange(1, 500)]
         [int]
         $MaxResults
@@ -149,8 +164,8 @@ function Search-SatRelease {
         if ($Date) {
             $searchQueryParams['Date'] = $Date
         }
-        if ($MaxResults) {
-            $searchQueryParams['MaxResults'] = $MaxResults
+        if ($PSBoundParameters.ContainsKey('Skip')) {
+            $searchQueryParams['Skip'] = $Skip
         }
 
         $searchPath = ConvertTo-SatSearchQuery @searchQueryParams

@@ -32,8 +32,8 @@ function ConvertTo-SatSearchQuery {
     .PARAMETER Date
         Filter by date added (format: YYYY-MM-DD).
 
-    .PARAMETER MaxResults
-        Maximum number of results to return (used with skip parameter).
+    .PARAMETER Skip
+        Number of results to skip for pagination.
 
     .EXAMPLE
         ConvertTo-SatSearchQuery -Query "Harry Potter" -Category "xvid" -HasNfo
@@ -87,9 +87,9 @@ function ConvertTo-SatSearchQuery {
         $Date,
 
         [Parameter(Mandatory = $false)]
-        [ValidateRange(1, 500)]
+        [ValidateRange(0, [int]::MaxValue)]
         [int]
-        $MaxResults
+        $Skip
     )
 
     $searchParts = @()
@@ -139,6 +139,11 @@ function ConvertTo-SatSearchQuery {
     # Add date filter
     if ($Date) {
         $searchParts += "date:$Date"
+    }
+
+    # Add skip filter for pagination
+    if ($PSBoundParameters.ContainsKey('Skip') -and $Skip -gt 0) {
+        $searchParts += "skip:$Skip"
     }
 
     # Join all parts with slashes
