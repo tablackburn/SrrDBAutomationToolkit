@@ -1,6 +1,8 @@
 # SrrDBAutomationToolkit
 
-A PowerShell module for interacting with [srrdb.com](https://www.srrdb.com), the scene release database.
+A PowerShell module for interacting with [srrdb.com](https://www.srrdb.com), the scene release database. Whether you're cataloging your extensive collection of Linux ISOs or simply navigating the high seas of digital preservation, this toolkit has you covered.
+
+> **Legal Notice:** This module provides metadata lookup capabilities only. It **cannot** be used to download, distribute, or acquire copyrighted material. srrDB is a database of release information and file verification data - not a source of actual content. Please respect intellectual property laws in your jurisdiction.
 
 ## Features
 
@@ -147,7 +149,7 @@ See `Get-Help Search-SatRelease -Parameter Category` for the full list.
 
 This module uses the [srrDB API v1](https://api.srrdb.com/v1/docs).
 
-Please use the API responsibly and follow their guidelines: "Use but don't scrape."
+Please use the API responsibly and follow their guidelines: "Use but don't scrape." Fair winds and smooth sailing to those who respect the rules of the sea.
 
 ## License
 
@@ -159,5 +161,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgments
 
-- [srrDB](https://www.srrdb.com) for providing the API
+- [srrDB](https://www.srrdb.com) for providing the API and keeping the archives of the high seas intact
 - [ReScene](http://rescene.wikidot.com/) for the scene preservation project
+- All the dedicated sailors cataloging their Linux ISOs for posterity
