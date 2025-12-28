@@ -1,0 +1,77 @@
+TOPIC
+    about_SrrDBAutomationToolkit
+
+SHORT DESCRIPTION
+    A PowerShell module for interacting with srrdb.com scene release database.
+
+LONG DESCRIPTION
+    SrrDBAutomationToolkit provides PowerShell cmdlets for searching and
+    retrieving information from srrdb.com, the scene release database.
+
+    The module supports:
+    - Searching releases with various filters
+    - Retrieving detailed release information
+    - Downloading and viewing NFO files
+    - Looking up IMDB information
+    - Downloading SRR (ReScene) files
+
+GETTING STARTED
+    Import the module:
+
+        Import-Module SrrDBAutomationToolkit
+
+    Search for releases:
+
+        Search-SatRelease -Query "Inception"
+
+    Get release details:
+
+        Get-SatRelease -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS"
+
+COMMANDS
+    Search-SatRelease
+        Searches for releases in the srrDB database using various filters.
+
+    Get-SatRelease
+        Gets detailed information about a specific release.
+
+    Get-SatNfo
+        Gets NFO file information or downloads NFO content.
+
+    Get-SatImdb
+        Gets IMDB information linked to a release.
+
+    Get-SatSrr
+        Downloads the SRR file for a release.
+
+NAMING CONVENTION
+    All commands use the "Sat" prefix, derived from "SrrDB Automation Toolkit".
+
+    Examples:
+        Search-SatRelease
+        Get-SatRelease
+        Get-SatNfo
+        Get-SatImdb
+        Get-SatSrr
+
+PIPELINE SUPPORT
+    All commands support pipeline input. You can chain commands together:
+
+        Search-SatRelease -Query "Matrix" | Get-SatRelease
+
+        Search-SatRelease -Query "Avatar" -HasNfo | Get-SatNfo -Download
+
+API INFORMATION
+    This module uses the srrDB API v1:
+    https://api.srrdb.com/v1/docs
+
+    Please use the API responsibly.
+
+SEE ALSO
+    Search-SatRelease
+    Get-SatRelease
+    Get-SatNfo
+    Get-SatImdb
+    Get-SatSrr
+    https://www.srrdb.com
+    https://api.srrdb.com/v1/docs

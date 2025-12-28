@@ -1,0 +1,14 @@
+# Don't check in the Output dir
+Output/
+
+scratch/
+
+testResults.xml
+codeCoverage.xml
+out/
+
+# Don't check in local integration test settings
+tests/local.settings.ps1
+
+# Claude Code local settings
+.claude/
