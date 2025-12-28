@@ -1,6 +1,7 @@
 # SrrDBAutomationToolkit
 
 [![CI](https://github.com/tablackburn/SrrDBAutomationToolkit/actions/workflows/CI.yaml/badge.svg)](https://github.com/tablackburn/SrrDBAutomationToolkit/actions/workflows/CI.yaml)
+[![codecov](https://codecov.io/gh/tablackburn/SrrDBAutomationToolkit/graph/badge.svg)](https://codecov.io/gh/tablackburn/SrrDBAutomationToolkit)
 
 A PowerShell module for interacting with [srrdb.com](https://www.srrdb.com), the scene release database. Whether you're cataloging your extensive collection of Linux ISOs or simply navigating the high seas of digital preservation, this toolkit has you covered.
 
