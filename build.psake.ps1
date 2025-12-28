@@ -10,10 +10,13 @@ properties {
     # Set this to $true to create a module with a monolithic PSM1
     $PSBPreference.Build.CompileModule = $false
     $PSBPreference.Help.DefaultLocale = 'en-US'
-    $PSBPreference.Test.OutputFile = 'out/testResults.xml'
+    # Use absolute paths for test output (relative paths resolve from tests directory)
+    $PSBPreference.Test.OutputFile = [IO.Path]::Combine($PSScriptRoot, 'out', 'testResults.xml')
     $PSBPreference.Test.OutputFormat = 'NUnitXml'
-    $PSBPreference.Test.CodeCoverage.Enabled = $true
+    $PSBPreference.Test.CodeCoverage.Enabled = $false  # Disabled: default config tracks test helpers instead of module
     $PSBPreference.Test.CodeCoverage.Threshold = 0.70  # 70% minimum coverage
+    $PSBPreference.Test.CodeCoverage.OutputFile = [IO.Path]::Combine($PSScriptRoot, 'out', 'codeCoverage.xml')
+    $PSBPreference.Test.CodeCoverage.OutputFileFormat = 'JaCoCo'
 }
 
 Task -Name 'Default' -Depends 'Test'
@@ -28,4 +31,5 @@ Task -Name 'Init_Integration' -Description 'Load integration test environment va
     }
 }
 
-Task -Name 'Test' -FromModule 'PowerShellBuild' -MinimumVersion '0.7.3' -Depends 'Init_Integration'
+# Note: -Depends replaces PowerShellBuild's default dependencies, so we must include Pester and Analyze explicitly
+Task -Name 'Test' -FromModule 'PowerShellBuild' -MinimumVersion '0.7.3' -Depends 'Init_Integration', 'Pester', 'Analyze'

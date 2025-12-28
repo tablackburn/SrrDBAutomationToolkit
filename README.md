@@ -1,5 +1,7 @@
 # SrrDBAutomationToolkit
 
+[![CI](https://github.com/tablackburn/SrrDBAutomationToolkit/actions/workflows/CI.yaml/badge.svg)](https://github.com/tablackburn/SrrDBAutomationToolkit/actions/workflows/CI.yaml)
+
 A PowerShell module for interacting with [srrdb.com](https://www.srrdb.com), the scene release database. Whether you're cataloging your extensive collection of Linux ISOs or simply navigating the high seas of digital preservation, this toolkit has you covered.
 
 > **Legal Notice:** This module provides metadata lookup capabilities only. It **cannot** be used to download, distribute, or acquire copyrighted material. srrDB is a database of release information and file verification data - not a source of actual content. Please respect intellectual property laws in your jurisdiction.

@@ -10,6 +10,32 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
     - uses: actions/checkout@v4
+
+    - name: Get PowerShell module path
+      id: psmodulepath
+      shell: pwsh
+      run: |
+        $path = ($env:PSModulePath -split [IO.Path]::PathSeparator |
+          Where-Object { $_ -like "*$env:HOME*" -or $_ -like "*$env:USERPROFILE*" } |
+          Select-Object -First 1)
+        "path=$path" >> $env:GITHUB_OUTPUT
+
+    - name: Cache PowerShell modules
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.psmodulepath.outputs.path }}
+        key: ${{ runner.os }}-psmodules-${{ hashFiles('build.depend.psd1') }}
+
     - name: Test
       shell: pwsh
-      run: ./build.ps1 -Task Test -Bootstrap
+      run: |
+        New-Item -ItemType Directory -Path out -Force | Out-Null
+        ./build.ps1 -Task Test -Bootstrap
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: out/
+        retention-days: 30
