@@ -229,5 +229,32 @@ Describe 'Invoke-SatApi' {
             $script:callCount | Should -Be 1
             Should -Invoke Start-Sleep -Times 0
         }
+
+        It 'Should retry on connection errors (WebException without response)' {
+            $script:callCount = 0
+            Mock Invoke-RestMethod {
+                $script:callCount++
+                if ($script:callCount -lt 2) {
+                    $webException = [System.Net.WebException]::new("Unable to connect to remote server")
+                    throw $webException
+                }
+                return @{ success = $true }
+            }
+            Mock Start-Sleep { }
+
+            $result = Invoke-SatApi -Uri 'https://api.srrdb.com/v1/test' -RetryDelaySeconds 0.1
+            $result.success | Should -BeTrue
+            $script:callCount | Should -Be 2
+        }
+    }
+
+    Context 'Response parsing' {
+        It 'Should parse JSON string response without -Depth on older PowerShell' {
+            # This tests the ConvertFrom-Json fallback path
+            Mock Invoke-RestMethod { return '{"nested": {"deep": "value"}}' }
+
+            $result = Invoke-SatApi -Uri 'https://api.srrdb.com/v1/test'
+            $result.nested.deep | Should -Be 'value'
+        }
     }
 }

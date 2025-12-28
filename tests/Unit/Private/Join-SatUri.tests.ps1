@@ -56,5 +56,20 @@ Describe 'Join-SatUri' {
         It 'Should throw on invalid URI format for BaseUri' {
             { Join-SatUri -BaseUri 'not-a-uri' -Endpoint '/test' } | Should -Throw "*Failed to join URI*"
         }
+
+        It 'Should throw when QueryString contains invalid characters' {
+            { Join-SatUri -Endpoint '/test' -QueryString 'param=<script>alert(1)</script>' } |
+                Should -Throw "*QueryString contains invalid characters*"
+        }
+
+        It 'Should throw when QueryString contains control characters' {
+            { Join-SatUri -Endpoint '/test' -QueryString "param=value`0injected" } |
+                Should -Throw "*QueryString contains invalid characters*"
+        }
+
+        It 'Should throw when QueryString contains quotes' {
+            { Join-SatUri -Endpoint '/test' -QueryString "param='value'" } |
+                Should -Throw "*QueryString contains invalid characters*"
+        }
     }
 }

@@ -134,6 +134,34 @@ Describe 'Search-SatRelease' {
             Mock Invoke-SatApi { return @{ error = 'Rate limit exceeded' } }
             { Search-SatRelease -Query 'Test' } | Should -Throw "*srrDB API error*"
         }
+
+        It 'Should require Query or ReleaseName parameter' {
+            # The function requires either Query or ReleaseName (mandatory parameter sets)
+            { Search-SatRelease } | Should -Throw "*missing mandatory*"
+        }
+    }
+
+    Context 'Additional search filters' {
+        It 'Should call API with ImdbId filter' {
+            Search-SatRelease -Query 'Movie' -ImdbId 'tt1234567'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'imdb:tt1234567'
+            }
+        }
+
+        It 'Should call API with HasSrs filter' {
+            Search-SatRelease -Query 'Test' -HasSrs
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'srs:yes'
+            }
+        }
+
+        It 'Should call API with Date filter' {
+            Search-SatRelease -Query 'Test' -Date '2023-01-15'
+            Should -Invoke Invoke-SatApi -ParameterFilter {
+                $Uri -match 'date:2023-01-15'
+            }
+        }
     }
 
     Context 'Empty results' {

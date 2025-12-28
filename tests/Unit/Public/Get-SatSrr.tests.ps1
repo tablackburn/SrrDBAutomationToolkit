@@ -66,5 +66,10 @@ Describe 'Get-SatSrr' {
             { Get-SatSrr -ReleaseName 'Test.Release-GROUP' -OutPath 'TestDrive:' -Confirm:$false } |
                 Should -Throw "*Failed to download SRR*"
         }
+
+        It 'Should throw when OutPath directory does not exist' {
+            { Get-SatSrr -ReleaseName 'Test.Release' -OutPath 'C:\NonExistent\Path\That\Does\Not\Exist' } |
+                Should -Throw "*Directory does not exist*"
+        }
     }
 }
