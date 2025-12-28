@@ -15,13 +15,19 @@ Searches for releases in the srrDB database.
 ### Query (Default)
 ```
 Search-SatRelease [-Query] <String> [-Group <String>] [-Category <String>] [-ImdbId <String>] [-HasNfo]
- [-HasSrs] [-Date <String>] [-MaxResults <Int32>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-HasSrs] [-Date <String>] [-Foreign] [-Confirmed] [-RarHash <String>] [-ArchiveCrc <String>]
+ [-ArchiveSize <Int64>] [-InternetSubtitlesDbHash <String>] [-Compressed] [-Order <String>] [-Country <String>]
+ [-Language <String>] [-SampleFilename <String>] [-SampleCrc <String>] [-MaxResults <Int32>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### ReleaseName
 ```
 Search-SatRelease -ReleaseName <String> [-Group <String>] [-Category <String>] [-ImdbId <String>] [-HasNfo]
- [-HasSrs] [-Date <String>] [-MaxResults <Int32>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-HasSrs] [-Date <String>] [-Foreign] [-Confirmed] [-RarHash <String>] [-ArchiveCrc <String>]
+ [-ArchiveSize <Int64>] [-InternetSubtitlesDbHash <String>] [-Compressed] [-Order <String>] [-Country <String>]
+ [-Language <String>] [-SampleFilename <String>] [-SampleCrc <String>] [-MaxResults <Int32>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -191,6 +197,187 @@ Accept wildcard characters: False
 ### -Date
 Filter by the date the release was added to the database.
 Format: YYYY-MM-DD
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Foreign
+If specified, only return foreign (non-English) releases.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirmed
+If specified, only return confirmed releases.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RarHash
+Filter by RAR file hash.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ArchiveCrc
+Filter by archive CRC value.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ArchiveSize
+Filter by archive size in bytes.
+
+```yaml
+Type: Int64
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: 0
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -InternetSubtitlesDbHash
+Filter by Internet Subtitles Database (ISDb) hash.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Compressed
+If specified, only return compressed releases.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Order
+Sort order for results. Valid values:
+date-asc, date-desc, release-asc, release-desc
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Country
+Filter by country code (e.g., US, UK, DE).
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Language
+Filter by language (e.g., English, German, French).
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SampleFilename
+Filter by sample filename stored inside SRS (Sample Rescue Service) files.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SampleCrc
+Filter by CRC32 of the sample video stored inside SRS files.
 
 ```yaml
 Type: String
