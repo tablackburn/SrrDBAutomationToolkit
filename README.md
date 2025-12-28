@@ -4,6 +4,7 @@
 [![codecov](https://codecov.io/gh/tablackburn/SrrDBAutomationToolkit/graph/badge.svg)](https://codecov.io/gh/tablackburn/SrrDBAutomationToolkit)
 [![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/SrrDBAutomationToolkit)](https://www.powershellgallery.com/packages/SrrDBAutomationToolkit)
 [![PowerShell Gallery Downloads](https://img.shields.io/powershellgallery/dt/SrrDBAutomationToolkit)](https://www.powershellgallery.com/packages/SrrDBAutomationToolkit)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)](https://github.com/tablackburn/SrrDBAutomationToolkit)
 
 A PowerShell module for interacting with [srrdb.com](https://www.srrdb.com), the scene release database. Whether you're cataloging your extensive collection of Linux ISOs or simply navigating the high seas of digital preservation, this toolkit has you covered.
 
