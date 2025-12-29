@@ -292,7 +292,7 @@ function Search-SatRelease {
         $pageSize = 45
         $skip = 0
         $totalReturned = 0
-        $allResults = [System.Collections.Generic.List[PSCustomObject]]::new()
+        $allResults = $null  # Initialize after first API call with known capacity
 
         do {
             # Build search path with skip for pagination
@@ -313,6 +313,16 @@ function Search-SatRelease {
             # Check for API errors
             if ($result.error) {
                 throw "srrDB API error: $($result.error)"
+            }
+
+            # Initialize list with capacity on first API call to reduce reallocations
+            if ($null -eq $allResults) {
+                $capacity = if ($MaxResults -and $MaxResults -lt $result.resultsCount) {
+                    $MaxResults
+                } else {
+                    $result.resultsCount
+                }
+                $allResults = [System.Collections.Generic.List[PSCustomObject]]::new([int]$capacity)
             }
 
             # Process page results

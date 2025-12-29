@@ -44,7 +44,7 @@ function Get-SatSrr {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([void])]
-    [OutputType([System.IO.FileInfo], ParameterSetName = 'PassThru')]
+    [OutputType([System.IO.FileInfo])]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias('Release')]
