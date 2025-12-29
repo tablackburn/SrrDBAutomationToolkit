@@ -218,68 +218,17 @@ function Search-SatRelease {
     )
 
     try {
-        # Build base search query parameters (without skip)
-        $searchQueryParameters = @{}
+        # Build search query parameters by passing through bound parameters
+        # Exclude MaxResults as it's handled locally for pagination
+        $excludeParams = @('MaxResults', 'Verbose', 'Debug', 'ErrorAction', 'WarningAction',
+                           'InformationAction', 'ErrorVariable', 'WarningVariable',
+                           'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable')
 
-        if ($Query) {
-            $searchQueryParameters['Query'] = $Query
-        }
-        if ($ReleaseName) {
-            $searchQueryParameters['ReleaseName'] = $ReleaseName
-        }
-        if ($Group) {
-            $searchQueryParameters['Group'] = $Group
-        }
-        if ($Category) {
-            $searchQueryParameters['Category'] = $Category
-        }
-        if ($ImdbId) {
-            $searchQueryParameters['ImdbId'] = $ImdbId
-        }
-        if ($HasNfo) {
-            $searchQueryParameters['HasNfo'] = $true
-        }
-        if ($HasSrs) {
-            $searchQueryParameters['HasSrs'] = $true
-        }
-        if ($Date) {
-            $searchQueryParameters['Date'] = $Date
-        }
-        if ($Foreign) {
-            $searchQueryParameters['Foreign'] = $true
-        }
-        if ($Confirmed) {
-            $searchQueryParameters['Confirmed'] = $true
-        }
-        if ($RarHash) {
-            $searchQueryParameters['RarHash'] = $RarHash
-        }
-        if ($ArchiveCrc) {
-            $searchQueryParameters['ArchiveCrc'] = $ArchiveCrc
-        }
-        if ($PSBoundParameters.ContainsKey('ArchiveSize')) {
-            $searchQueryParameters['ArchiveSize'] = $ArchiveSize
-        }
-        if ($InternetSubtitlesDbHash) {
-            $searchQueryParameters['InternetSubtitlesDbHash'] = $InternetSubtitlesDbHash
-        }
-        if ($Compressed) {
-            $searchQueryParameters['Compressed'] = $true
-        }
-        if ($Order) {
-            $searchQueryParameters['Order'] = $Order
-        }
-        if ($Country) {
-            $searchQueryParameters['Country'] = $Country
-        }
-        if ($Language) {
-            $searchQueryParameters['Language'] = $Language
-        }
-        if ($SampleFilename) {
-            $searchQueryParameters['SampleFilename'] = $SampleFilename
-        }
-        if ($SampleCrc) {
-            $searchQueryParameters['SampleCrc'] = $SampleCrc
+        $searchQueryParameters = @{}
+        foreach ($key in $PSBoundParameters.Keys) {
+            if ($key -notin $excludeParams) {
+                $searchQueryParameters[$key] = $PSBoundParameters[$key]
+            }
         }
 
         $baseSearchPath = ConvertTo-SatSearchQuery @searchQueryParameters
