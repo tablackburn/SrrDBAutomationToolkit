@@ -131,9 +131,9 @@ function Get-SatNfo {
                     # Remove any path components
                     $fileName = [System.IO.Path]::GetFileName($rawFileName)
                     # Replace all invalid filename characters with underscore
-                    $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
-                    foreach ($char in $invalidChars) {
-                        $fileName = $fileName.Replace($char, '_')
+                    $invalidCharacters = [System.IO.Path]::GetInvalidFileNameChars()
+                    foreach ($character in $invalidCharacters) {
+                        $fileName = $fileName.Replace($character, '_')
                     }
                     # Ensure it ends with .nfo extension
                     if (-not $fileName.EndsWith('.nfo', [StringComparison]::OrdinalIgnoreCase)) {

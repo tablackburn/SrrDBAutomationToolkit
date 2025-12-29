@@ -220,13 +220,13 @@ function Search-SatRelease {
     try {
         # Build search query parameters by passing through bound parameters
         # Exclude MaxResults as it's handled locally for pagination
-        $excludeParams = @('MaxResults', 'Verbose', 'Debug', 'ErrorAction', 'WarningAction',
-                           'InformationAction', 'ErrorVariable', 'WarningVariable',
-                           'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable')
+        $excludeParameters = @('MaxResults', 'Verbose', 'Debug', 'ErrorAction', 'WarningAction',
+                               'InformationAction', 'ErrorVariable', 'WarningVariable',
+                               'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable')
 
         $searchQueryParameters = @{}
         foreach ($key in $PSBoundParameters.Keys) {
-            if ($key -notin $excludeParams) {
+            if ($key -notin $excludeParameters) {
                 $searchQueryParameters[$key] = $PSBoundParameters[$key]
             }
         }

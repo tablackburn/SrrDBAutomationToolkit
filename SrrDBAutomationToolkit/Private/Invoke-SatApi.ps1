@@ -87,12 +87,12 @@ function Invoke-SatApi {
                 $trimmed = $response.TrimStart()
                 if ($trimmed.StartsWith('{') -or $trimmed.StartsWith('[')) {
                     Write-Debug "Response is JSON string, parsing..."
-                    $convertParams = @{}
+                    $convertParameters = @{}
                     # Use -Depth only if available (PowerShell 6.0+)
                     if ($PSVersionTable.PSVersion.Major -ge 6) {
-                        $convertParams['Depth'] = 100
+                        $convertParameters['Depth'] = 100
                     }
-                    $response = $response | ConvertFrom-Json @convertParams
+                    $response = $response | ConvertFrom-Json @convertParameters
                 }
             }
 
