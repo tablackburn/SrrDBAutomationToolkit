@@ -139,6 +139,11 @@ Describe 'Search-SatRelease' {
             # The function requires either Query or ReleaseName (mandatory parameter sets)
             { Search-SatRelease } | Should -Throw "*missing mandatory*"
         }
+
+        It 'Should throw when ConvertTo-SatSearchQuery returns empty' {
+            Mock ConvertTo-SatSearchQuery { return '' }
+            { Search-SatRelease -Query 'Test' } | Should -Throw "*No search criteria specified*"
+        }
     }
 
     Context 'Additional search filters' {

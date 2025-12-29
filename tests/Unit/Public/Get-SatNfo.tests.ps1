@@ -171,5 +171,35 @@ Describe 'Get-SatNfo' {
             $result = Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath $testDir
             $result.Name | Should -Not -Match '[:\\*\\?"<>|]'
         }
+
+        It 'Should handle array response for nfo and nfolink' {
+            Mock Invoke-SatApi {
+                return @{
+                    nfo     = @('first.nfo', 'second.nfo')
+                    nfolink = @('https://www.srrdb.com/download/file/Test/first.nfo', 'https://www.srrdb.com/download/file/Test/second.nfo')
+                }
+            }
+
+            $testDir = Join-Path $TestDrive 'nfo_test6'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            $result = Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath $testDir
+            $result.Name | Should -Be 'first.nfo'
+        }
+
+        It 'Should add .nfo extension when filename does not have it' {
+            Mock Invoke-SatApi {
+                return @{
+                    nfo     = 'readme.txt'
+                    nfolink = 'https://www.srrdb.com/download/file/Test/readme.txt'
+                }
+            }
+
+            $testDir = Join-Path $TestDrive 'nfo_test7'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            $result = Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath $testDir
+            $result.Name | Should -Be 'readme.txt.nfo'
+        }
     }
 }
