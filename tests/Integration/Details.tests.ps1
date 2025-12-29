@@ -60,6 +60,7 @@ BeforeAll {
     }
     catch {
         # Already handled in BeforeDiscovery - tests will skip
+        Write-Verbose "API check failed: $($_.Exception.Message)"
     }
 }
 
@@ -117,10 +118,18 @@ Describe 'Get-SatNfo Integration' -Tag 'Integration' {
         }
 
         It 'Should download NFO content with -Download switch' -Skip:(-not $script:ApiAvailable -or -not $script:TestReleaseWithNfo) {
-            $content = Get-SatNfo -ReleaseName $script:TestReleaseWithNfo -Download
-            # -Download returns the NFO content directly as a string
-            $content | Should -Not -BeNullOrEmpty
-            $content | Should -BeOfType [string]
+            Push-Location $TestDrive
+            try {
+                $fileInfo = Get-SatNfo -ReleaseName $script:TestReleaseWithNfo -Download
+                # -Download saves file and returns FileInfo
+                $fileInfo | Should -Not -BeNullOrEmpty
+                $fileInfo | Should -BeOfType [System.IO.FileInfo]
+                $fileInfo.Name | Should -Match '\.nfo$'
+                Test-Path $fileInfo.FullName | Should -BeTrue
+            }
+            finally {
+                Pop-Location
+            }
         }
 
         It 'Should return null for release without NFO' -Skip:(-not $script:ApiAvailable) {
@@ -142,7 +151,6 @@ Describe 'Get-SatNfo Integration' -Tag 'Integration' {
 Describe 'Get-SatImdb Integration' -Tag 'Integration' {
     Context 'IMDB Information' {
         It 'Should return IMDB info for a movie release' -Skip:(-not $script:ApiAvailable -or -not $script:TestReleaseWithImdb) {
-            $result = Get-SatImdb -ReleaseName $script:TestReleaseWithImdb
             # Not all releases have IMDB info, so we just check it doesn't error
             { Get-SatImdb -ReleaseName $script:TestReleaseWithImdb } | Should -Not -Throw
         }

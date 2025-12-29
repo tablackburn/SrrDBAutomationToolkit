@@ -19,12 +19,13 @@ Get-SatNfo -ReleaseName <String> [-ProgressAction <ActionPreference>] [<CommonPa
 
 ### Download
 ```
-Get-SatNfo -ReleaseName <String> [-Download] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-SatNfo -ReleaseName <String> [-Download] [-OutPath <String>] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
-### Save
+### AsString
 ```
-Get-SatNfo -ReleaseName <String> -OutPath <String> [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-SatNfo -ReleaseName <String> [-AsString] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -89,7 +90,7 @@ Type: SwitchParameter
 Parameter Sets: Download
 Aliases:
 
-Required: False
+Required: True
 Position: Named
 Default value: False
 Accept pipeline input: False
@@ -102,12 +103,28 @@ The filename will be the original NFO filename from the release.
 
 ```yaml
 Type: String
-Parameter Sets: Save
+Parameter Sets: Download
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AsString
+If specified, downloads and returns the NFO content as a string instead
+of saving to a file.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: AsString
 Aliases:
 
 Required: True
 Position: Named
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

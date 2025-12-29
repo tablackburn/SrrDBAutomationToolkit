@@ -256,11 +256,11 @@ Describe 'Invoke-SatApi' {
             $result = Invoke-SatApi -Uri 'https://api.srrdb.com/v1/test'
             $result.nested.deep | Should -Be 'value'
         }
+
     }
 
-    # Note: Lines 95 and 115-116 in Invoke-SatApi.ps1 are legacy compatibility code
-    # for PowerShell 5.1 / .NET Framework that cannot be easily unit tested on PS 7.
-    # - Line 95: ConvertFrom-Json without -Depth (PS 5.1 doesn't support -Depth)
-    # - Lines 115-116: HttpWebResponse status code extraction (legacy .NET Framework path)
-    # These paths are tested implicitly through integration tests on Windows PowerShell.
+    # Note: Lines 113-116 in Invoke-SatApi.ps1 are legacy compatibility code
+    # for .NET Framework WebException with HttpWebResponse handling.
+    # In .NET Core/PS7, HTTP errors throw HttpResponseException, not WebException.
+    # The WebException path with HttpWebResponse can only execute on Windows PowerShell 5.1.
 }

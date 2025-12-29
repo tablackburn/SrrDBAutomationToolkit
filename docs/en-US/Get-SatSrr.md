@@ -13,7 +13,7 @@ Downloads the SRR file for a release from srrDB.
 ## SYNTAX
 
 ```
-Get-SatSrr [-ReleaseName] <String> [-OutPath] <String> [-PassThru] [-ProgressAction <ActionPreference>]
+Get-SatSrr [-ReleaseName] <String> [[-OutPath] <String>] [-PassThru] [-ProgressAction <ActionPreference>]
  [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -73,7 +73,7 @@ Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: 2
 Default value: None
 Accept pipeline input: False
