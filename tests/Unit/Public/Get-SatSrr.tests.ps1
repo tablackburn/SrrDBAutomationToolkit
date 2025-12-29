@@ -26,6 +26,19 @@ Describe 'Get-SatSrr' {
                 $OutFile -match 'Test\.Release-GROUP\.srr'
             }
         }
+
+        It 'Should download to current directory when OutPath not specified' {
+            Push-Location $TestDrive
+            try {
+                Get-SatSrr -ReleaseName 'Test.Release-GROUP' -Confirm:$false
+                Should -Invoke Invoke-WebRequest -ParameterFilter {
+                    $OutFile -match 'Test\.Release-GROUP\.srr'
+                }
+            }
+            finally {
+                Pop-Location
+            }
+        }
     }
 
     Context 'PassThru parameter' {

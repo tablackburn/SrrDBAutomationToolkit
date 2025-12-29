@@ -12,11 +12,16 @@ function Get-SatSrr {
         Supports pipeline input.
 
     .PARAMETER OutPath
-        The directory where the SRR file should be saved.
-        The filename will be {ReleaseName}.srr
+        The directory where the SRR file should be saved. Defaults to the current
+        directory if not specified. The filename will be {ReleaseName}.srr
 
     .PARAMETER PassThru
         If specified, returns a FileInfo object for the downloaded file.
+
+    .EXAMPLE
+        Get-SatSrr -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS"
+
+        Downloads the SRR file to the current directory.
 
     .EXAMPLE
         Get-SatSrr -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS" -OutPath "C:\SRR"
@@ -24,12 +29,12 @@ function Get-SatSrr {
         Downloads the SRR file to C:\SRR\Inception.2010.1080p.BluRay.x264-SPARKS.srr
 
     .EXAMPLE
-        Search-SatRelease -Query "Inception" | Get-SatSrr -OutPath "C:\SRR"
+        Search-SatRelease -Query "Inception" | Get-SatSrr
 
-        Searches for releases and downloads their SRR files.
+        Searches for releases and downloads their SRR files to the current directory.
 
     .EXAMPLE
-        Get-SatSrr -ReleaseName "Some.Release-GROUP" -OutPath "." -PassThru
+        Get-SatSrr -ReleaseName "Some.Release-GROUP" -PassThru
 
         Downloads the SRR file to the current directory and returns the FileInfo object.
 
@@ -47,7 +52,7 @@ function Get-SatSrr {
         [string]
         $ReleaseName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({
             if (-not (Test-Path -Path $_ -PathType Container)) {
@@ -70,7 +75,10 @@ function Get-SatSrr {
             # Sanitize filename to remove invalid filesystem characters
             $safeReleaseName = $ReleaseName -replace '[\\/:*?"<>|]', '_'
             $fileName = "$safeReleaseName.srr"
-            $filePath = Join-Path -Path $OutPath -ChildPath $fileName
+
+            # Use OutPath if specified, otherwise current directory
+            $targetPath = if ($OutPath) { $OutPath } else { Get-Location -PSProvider FileSystem | Select-Object -ExpandProperty Path }
+            $filePath = Join-Path -Path $targetPath -ChildPath $fileName
 
             Write-Verbose "Downloading SRR file: $downloadUrl"
 
