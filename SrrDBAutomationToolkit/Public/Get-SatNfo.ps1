@@ -5,18 +5,24 @@ function Get-SatNfo {
 
     .DESCRIPTION
         Retrieves NFO file details for a scene release, including the NFO filename
-        and download URL. Can optionally download the NFO content or save it to a file.
+        and download URL. Can optionally download the NFO to a file or return the
+        content as a string.
 
     .PARAMETER ReleaseName
         The release dirname to look up. This is the exact scene release name.
         Supports pipeline input.
 
     .PARAMETER Download
-        If specified, downloads and returns the NFO content as a string.
+        If specified, downloads the NFO and saves it to a file. By default, saves
+        to the current directory. Use -OutPath to specify a different directory.
 
     .PARAMETER OutPath
-        If specified, downloads the NFO and saves it to the specified directory.
-        The filename will be the original NFO filename from the release.
+        The directory to save downloaded NFO files to. Defaults to the current
+        directory. Only used with -Download.
+
+    .PARAMETER AsString
+        If specified, downloads and returns the NFO content as a string instead
+        of saving to a file.
 
     .EXAMPLE
         Get-SatNfo -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS"
@@ -26,17 +32,22 @@ function Get-SatNfo {
     .EXAMPLE
         Get-SatNfo -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS" -Download
 
-        Downloads and displays the NFO content.
+        Downloads the NFO file and saves it to the current directory.
 
     .EXAMPLE
-        Get-SatNfo -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS" -OutPath "C:\NFOs"
+        Get-SatNfo -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS" -Download -OutPath "C:\NFOs"
 
-        Downloads the NFO file and saves it to C:\NFOs\sparks.nfo (or similar).
+        Downloads the NFO file and saves it to C:\NFOs.
+
+    .EXAMPLE
+        Get-SatNfo -ReleaseName "Inception.2010.1080p.BluRay.x264-SPARKS" -AsString
+
+        Downloads and returns the NFO content as a string.
 
     .EXAMPLE
         Search-SatRelease -Query "Inception" -HasNfo | Get-SatNfo -Download
 
-        Searches for releases with NFOs and downloads their content.
+        Searches for releases with NFOs and downloads them to the current directory.
 
     .OUTPUTS
         PSCustomObject with properties:
@@ -44,13 +55,13 @@ function Get-SatNfo {
         - NfoFile: NFO filename
         - DownloadUrl: URL to download the NFO file
 
-        If -Download is specified, returns the NFO content as a string.
-        If -OutPath is specified, returns a FileInfo object for the saved file.
+        If -Download is specified, returns a FileInfo object for the saved file.
+        If -AsString is specified, returns the NFO content as a string.
     #>
     [CmdletBinding(DefaultParameterSetName = 'Info')]
     [OutputType([PSCustomObject], ParameterSetName = 'Info')]
-    [OutputType([string], ParameterSetName = 'Download')]
-    [OutputType([System.IO.FileInfo], ParameterSetName = 'Save')]
+    [OutputType([System.IO.FileInfo], ParameterSetName = 'Download')]
+    [OutputType([string], ParameterSetName = 'AsString')]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias('Release')]
@@ -58,11 +69,11 @@ function Get-SatNfo {
         [string]
         $ReleaseName,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'Download')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Download')]
         [switch]
         $Download,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Save')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Download')]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({
             if (-not (Test-Path -Path $_ -PathType Container)) {
@@ -71,7 +82,11 @@ function Get-SatNfo {
             $true
         })]
         [string]
-        $OutPath
+        $OutPath,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'AsString')]
+        [switch]
+        $AsString
     )
 
     process {
@@ -105,12 +120,12 @@ function Get-SatNfo {
             }
 
             # Handle download scenarios
-            if ($Download -or $OutPath) {
+            if ($Download -or $AsString) {
                 Write-Verbose "Downloading NFO from: $nfoLink"
 
                 $nfoContent = Invoke-RestMethod -Uri $nfoLink -ErrorAction 'Stop'
 
-                if ($OutPath) {
+                if ($Download) {
                     # Save to file - sanitize filename to prevent path traversal
                     $rawFileName = if ($nfoFile) { $nfoFile } else { "$ReleaseName.nfo" }
                     # Remove any path components and invalid characters
@@ -120,7 +135,10 @@ function Get-SatNfo {
                     if (-not $fileName.EndsWith('.nfo', [StringComparison]::OrdinalIgnoreCase)) {
                         $fileName = "$fileName.nfo"
                     }
-                    $filePath = Join-Path -Path $OutPath -ChildPath $fileName
+
+                    # Use OutPath if specified, otherwise current directory
+                    $targetPath = if ($OutPath) { $OutPath } else { Get-Location -PSProvider FileSystem | Select-Object -ExpandProperty Path }
+                    $filePath = Join-Path -Path $targetPath -ChildPath $fileName
 
                     [System.IO.File]::WriteAllText($filePath, $nfoContent)
 
@@ -128,7 +146,7 @@ function Get-SatNfo {
                     return Get-Item -Path $filePath
                 }
                 else {
-                    # Return content
+                    # Return content as string
                     return $nfoContent
                 }
             }

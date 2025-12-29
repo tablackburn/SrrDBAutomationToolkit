@@ -35,10 +35,38 @@ Describe 'Get-SatNfo' {
     Context 'Download functionality' {
         BeforeAll {
             Mock Invoke-RestMethod { return 'NFO content here' }
+            # Set location to TestDrive for download tests
+            Push-Location $TestDrive
         }
 
-        It 'Should download NFO content when -Download specified' {
+        AfterAll {
+            Pop-Location
+        }
+
+        It 'Should save NFO to current directory when -Download specified' {
             $result = Get-SatNfo -ReleaseName 'Test.Release.2023-GROUP' -Download
+            $result | Should -BeOfType [System.IO.FileInfo]
+            $result.Name | Should -Be 'group.nfo'
+            Test-Path $result.FullName | Should -BeTrue
+        }
+
+        It 'Should save NFO to specified directory when -Download -OutPath specified' {
+            $testDir = Join-Path $TestDrive 'download_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            $result = Get-SatNfo -ReleaseName 'Test.Release.2023-GROUP' -Download -OutPath $testDir
+            $result | Should -BeOfType [System.IO.FileInfo]
+            $result.DirectoryName | Should -Be $testDir
+        }
+    }
+
+    Context 'AsString functionality' {
+        BeforeAll {
+            Mock Invoke-RestMethod { return 'NFO content here' }
+        }
+
+        It 'Should return NFO content as string when -AsString specified' {
+            $result = Get-SatNfo -ReleaseName 'Test.Release.2023-GROUP' -AsString
             $result | Should -Be 'NFO content here'
         }
     }
@@ -70,7 +98,7 @@ Describe 'Get-SatNfo' {
         }
 
         It 'Should throw when OutPath directory does not exist' {
-            { Get-SatNfo -ReleaseName 'Test.Release' -OutPath 'C:\NonExistent\Path\That\Does\Not\Exist' } |
+            { Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath 'C:\NonExistent\Path\That\Does\Not\Exist' } |
                 Should -Throw "*Directory does not exist*"
         }
     }
@@ -80,11 +108,11 @@ Describe 'Get-SatNfo' {
             Mock Invoke-RestMethod { return 'NFO file content here' }
         }
 
-        It 'Should save NFO to file when OutPath specified' {
+        It 'Should save NFO to file when -Download -OutPath specified' {
             $testDir = Join-Path $TestDrive 'nfo_test'
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
-            $result = Get-SatNfo -ReleaseName 'Test.Release.2023-GROUP' -OutPath $testDir
+            $result = Get-SatNfo -ReleaseName 'Test.Release.2023-GROUP' -Download -OutPath $testDir
             $result | Should -Not -BeNullOrEmpty
             $result.FullName | Should -Match '\.nfo$'
         }
@@ -93,7 +121,7 @@ Describe 'Get-SatNfo' {
             $testDir = Join-Path $TestDrive 'nfo_test2'
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
-            $result = Get-SatNfo -ReleaseName 'Test.Release.2023-GROUP' -OutPath $testDir
+            $result = Get-SatNfo -ReleaseName 'Test.Release.2023-GROUP' -Download -OutPath $testDir
             $result.Name | Should -Be 'group.nfo'
         }
 
@@ -108,7 +136,7 @@ Describe 'Get-SatNfo' {
             $testDir = Join-Path $TestDrive 'nfo_test3'
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
-            Get-SatNfo -ReleaseName 'Test.Release' -OutPath $testDir
+            Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath $testDir
             Should -Invoke Invoke-RestMethod -ParameterFilter {
                 $Uri -match 'srrdb\.com/download/file/Test\.Release/custom\.nfo'
             }
@@ -125,7 +153,7 @@ Describe 'Get-SatNfo' {
             $testDir = Join-Path $TestDrive 'nfo_test4'
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
-            $result = Get-SatNfo -ReleaseName 'Test.Release' -OutPath $testDir
+            $result = Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath $testDir
             $result.Name | Should -Be 'Test.Release.nfo'
         }
 
@@ -140,7 +168,7 @@ Describe 'Get-SatNfo' {
             $testDir = Join-Path $TestDrive 'nfo_test5'
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
-            $result = Get-SatNfo -ReleaseName 'Test.Release' -OutPath $testDir
+            $result = Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath $testDir
             $result.Name | Should -Not -Match '[:\\*\\?"<>|]'
         }
     }
