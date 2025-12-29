@@ -181,8 +181,10 @@ function ConvertTo-SatSearchQuery {
     $searchParts = @()
 
     # If exact release name is specified, use r: prefix (faster API lookup)
+    # URL-encode to prevent path injection attacks
     if ($ReleaseName) {
-        $searchParts += "r:$ReleaseName"
+        $encodedReleaseName = [System.Uri]::EscapeDataString($ReleaseName)
+        $searchParts += "r:$encodedReleaseName"
     }
 
     # Add query terms (split by spaces and join with slashes)

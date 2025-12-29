@@ -128,9 +128,13 @@ function Get-SatNfo {
                 if ($Download) {
                     # Save to file - sanitize filename to prevent path traversal
                     $rawFileName = if ($nfoFile) { $nfoFile } else { "$ReleaseName.nfo" }
-                    # Remove any path components and invalid characters
+                    # Remove any path components
                     $fileName = [System.IO.Path]::GetFileName($rawFileName)
-                    $fileName = $fileName -replace '[\\/:*?"<>|]', '_'
+                    # Replace all invalid filename characters with underscore
+                    $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+                    foreach ($char in $invalidChars) {
+                        $fileName = $fileName.Replace($char, '_')
+                    }
                     # Ensure it ends with .nfo extension
                     if (-not $fileName.EndsWith('.nfo', [StringComparison]::OrdinalIgnoreCase)) {
                         $fileName = "$fileName.nfo"

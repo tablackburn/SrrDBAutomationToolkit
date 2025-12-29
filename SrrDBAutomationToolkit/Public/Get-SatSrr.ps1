@@ -72,8 +72,12 @@ function Get-SatSrr {
         try {
             $encodedRelease = [System.Uri]::EscapeDataString($ReleaseName)
             $downloadUrl = "https://www.srrdb.com/download/srr/$encodedRelease"
-            # Sanitize filename to remove invalid filesystem characters
-            $safeReleaseName = $ReleaseName -replace '[\\/:*?"<>|]', '_'
+            # Sanitize filename to remove all invalid filesystem characters
+            $safeReleaseName = $ReleaseName
+            $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+            foreach ($char in $invalidChars) {
+                $safeReleaseName = $safeReleaseName.Replace($char, '_')
+            }
             $fileName = "$safeReleaseName.srr"
 
             # Use OutPath if specified, otherwise current directory

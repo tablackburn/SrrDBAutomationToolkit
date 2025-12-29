@@ -316,10 +316,12 @@ function Search-SatRelease {
             }
 
             # Process page results
+            $hitMaxResults = $false
             if ($result.results -and $result.results.Count -gt 0) {
                 foreach ($item in $result.results) {
-                    # Check if we've hit MaxResults
+                    # Check if we've hit MaxResults before adding
                     if ($MaxResults -and $allResults.Count -ge $MaxResults) {
+                        $hitMaxResults = $true
                         break
                     }
 
@@ -343,9 +345,10 @@ function Search-SatRelease {
             }
 
             # Continue if: we got a full page, haven't hit MaxResults, and there are more results
-        } while ($totalReturned -eq $pageSize -and
-                 (-not $MaxResults -or $allResults.Count -lt $MaxResults) -and
-                 $allResults.Count -lt $result.resultsCount)
+            $shouldContinue = -not $hitMaxResults -and
+                              $totalReturned -eq $pageSize -and
+                              $allResults.Count -lt $result.resultsCount
+        } while ($shouldContinue)
 
         if ($allResults.Count -gt 0) {
             $allResults
