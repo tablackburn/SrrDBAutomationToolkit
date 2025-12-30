@@ -5,6 +5,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/tablackburn/SrrDBAutomationToolkit/CI.yaml?branch=main)](https://github.com/tablackburn/SrrDBAutomationToolkit/actions/workflows/CI.yaml)
 ![Platform](https://img.shields.io/powershellgallery/p/SrrDBAutomationToolkit)
 [![AI Assisted](https://img.shields.io/badge/AI-Assisted-blue)](https://claude.ai)
+[![License](https://img.shields.io/github/license/tablackburn/SrrDBAutomationToolkit)](LICENSE)
 
 A PowerShell module for interacting with [srrdb.com](https://www.srrdb.com), the scene release database. Whether you're cataloging your extensive collection of Linux ISOs or simply navigating the high seas of digital preservation, this toolkit has you covered.
 
