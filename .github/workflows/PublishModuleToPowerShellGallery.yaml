@@ -1,0 +1,82 @@
+name: Publish Module to PowerShell Gallery
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'SrrDBAutomationToolkit/SrrDBAutomationToolkit.psd1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish Module
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Module Version
+        id: version
+        shell: pwsh
+        run: |
+          $manifest = Import-PowerShellDataFile -Path ./SrrDBAutomationToolkit/SrrDBAutomationToolkit.psd1
+          $version = $manifest.ModuleVersion
+          Write-Host "Module version: $version"
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Check if Release Exists
+        id: check_release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "GitHub release v${{ steps.version.outputs.version }} already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "GitHub release v${{ steps.version.outputs.version }} does not exist"
+          fi
+
+      - name: Check if PSGallery Version Exists
+        id: check_psgallery
+        if: steps.check_release.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $published = Find-Module -Name SrrDBAutomationToolkit -RequiredVersion $version -Repository PSGallery -ErrorAction SilentlyContinue
+          if ($published) {
+            Write-Host "PSGallery version $version already exists"
+            "exists=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            Write-Host "PSGallery version $version not found - will publish"
+            "exists=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
+      - name: Bootstrap
+        if: steps.check_release.outputs.exists == 'false'
+        shell: pwsh
+        run: ./build.ps1 -Task Init -Bootstrap
+
+      - name: Create GitHub Release
+        if: steps.check_release.outputs.exists == 'false'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --generate-notes
+
+      - name: Publish to PSGallery
+        if: steps.check_release.outputs.exists == 'false' && steps.check_psgallery.outputs.exists == 'false'
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PS_GALLERY_KEY }}
+        run: ./build.ps1 -Task Publish -Bootstrap
