@@ -160,7 +160,7 @@ Describe 'Get-SatNfo' {
         It 'Should sanitize invalid characters in filename' {
             Mock Invoke-SatApi {
                 return @{
-                    nfo     = 'bad:file*name?.nfo'
+                    nfo     = 'bad/file.nfo'
                     nfolink = 'https://www.srrdb.com/download/file/Test/bad.nfo'
                 }
             }
@@ -169,8 +169,10 @@ Describe 'Get-SatNfo' {
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
             $result = Get-SatNfo -ReleaseName 'Test.Release' -Download -OutPath $testDir
-            $result.Name | Should -Not -Match '[:\\*\\?"<>|]'
-        }
+            # Verify no invalid characters remain using the platform actual invalid chars
+            $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+            $invalidPattern = '[' + [regex]::Escape([string]::new($invalidChars)) + ']'
+            $result.Name | Should -Not -Match $invalidPattern
 
         It 'Should handle array response for nfo and nfolink' {
             Mock Invoke-SatApi {
