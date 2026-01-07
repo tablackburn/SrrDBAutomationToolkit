@@ -21,7 +21,7 @@ jobs:
         "path=$path" >> $env:GITHUB_OUTPUT
 
     - name: Cache PowerShell modules
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ steps.psmodulepath.outputs.path }}
         key: ${{ runner.os }}-psmodules-${{ hashFiles('build.depend.psd1') }}
