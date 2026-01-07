@@ -12,120 +12,254 @@ Describe 'Get-SatFile' {
         Mock Get-Item { return [PSCustomObject]@{ FullName = 'C:\Test\proof.jpg' } }
     }
 
-    Context 'Download functionality' {
-        It 'Should call Invoke-WebRequest with correct URL for simple filename' {
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath 'TestDrive:' -Confirm:$false
+    Context 'Basic download functionality' {
+        BeforeAll {
+            Push-Location $TestDrive
+        }
+
+        AfterAll {
+            Pop-Location
+        }
+
+        It 'Should download file to specified directory' {
+            $testDir = Join-Path $TestDrive 'download_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { }
+
+            { Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir } | Should -Not -Throw
+            Should -Invoke Invoke-WebRequest -Times 1
+        }
+
+        It 'Should call Invoke-WebRequest with correct URL' {
+            $testDir = Join-Path $TestDrive 'url_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir
+
             Should -Invoke Invoke-WebRequest -ParameterFilter {
-                $Uri -match 'srrdb\.com/download/file/Test\.Release-GROUP/proof\.jpg'
+                $Uri -eq 'https://www.srrdb.com/download/file/Test.Release-GROUP/proof.jpg'
             }
         }
 
-        It 'Should call Invoke-WebRequest with correct URL for filename with path prefix' {
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/proof.jpg' -OutPath 'TestDrive:' -Confirm:$false
-            Should -Invoke Invoke-WebRequest -ParameterFilter {
-                $Uri -match 'srrdb\.com/download/file/Test\.Release-GROUP/Proof/proof\.jpg'
-            }
-        }
+        It 'Should save file with correct filename' {
+            $testDir = Join-Path $TestDrive 'filename_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
-        It 'Should preserve forward slashes in URL encoding' {
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/proof image.jpg' -OutPath 'TestDrive:' -Confirm:$false
-            Should -Invoke Invoke-WebRequest -ParameterFilter {
-                # URI should contain the path with forward slash preserved
-                $Uri -like '*Proof/proof*image.jpg*' -and $Uri -notlike '*Proof%2F*'
-            }
-        }
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir
 
-        It 'Should strip path components from local filename' {
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/proof.jpg' -OutPath 'TestDrive:' -Confirm:$false
             Should -Invoke Invoke-WebRequest -ParameterFilter {
-                $OutFile -like '*\proof.jpg' -or $OutFile -like '*/proof.jpg'
-            }
-        }
-
-        It 'Should sanitize invalid filesystem characters in filename' {
-            # Use forward slash which should be sanitized from the filename component
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/file.jpg' -OutPath 'TestDrive:' -Confirm:$false
-            Should -Invoke Invoke-WebRequest -ParameterFilter {
-                # Path component should be stripped, not turned into underscore
-                $OutFile -like '*file.jpg' -and $OutFile -notlike '*/*Proof*'
+                $OutFile -match 'proof\.jpg$'
             }
         }
 
         It 'Should download to current directory when OutPath not specified' {
-            Push-Location $TestDrive
-            try {
-                Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -Confirm:$false
-                Should -Invoke Invoke-WebRequest -ParameterFilter {
-                    $OutFile -match 'proof\.jpg'
-                }
-            }
-            finally {
-                Pop-Location
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg'
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $OutFile -match 'proof\.jpg$'
             }
         }
     }
 
-    Context 'URL encoding' {
-        It 'Should URL encode release name' {
-            Get-SatFile -ReleaseName 'Test Release-GROUP' -FileName 'proof.jpg' -OutPath 'TestDrive:' -Confirm:$false
-            Should -Invoke Invoke-WebRequest -ParameterFilter {
-                # URI should contain the encoded or decoded space - accept either
-                $Uri -like '*Test*Release-GROUP*'
-            }
+    Context 'PassThru functionality' {
+        It 'Should return FileInfo when -PassThru specified' {
+            $testDir = Join-Path $TestDrive 'passthru_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+            $expectedPath = Join-Path $testDir 'proof.jpg'
+
+            Mock Invoke-WebRequest { }
+            Mock Get-Item { [System.IO.FileInfo]::new($expectedPath) } -ParameterFilter { $Path -eq $expectedPath }
+
+            # Create the file so FileInfo works
+            New-Item -Path $expectedPath -ItemType File -Force | Out-Null
+
+            $result = Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir -PassThru
+            $result | Should -BeOfType [System.IO.FileInfo]
         }
 
-        It 'Should URL encode each path segment individually' {
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Sample/sample file.mkv' -OutPath 'TestDrive:' -Confirm:$false
-            Should -Invoke Invoke-WebRequest -ParameterFilter {
-                # URI should contain the path with forward slash preserved
-                $Uri -like '*Sample/sample*file.mkv*' -and $Uri -notlike '*Sample%2F*'
-            }
-        }
-    }
+        It 'Should return nothing when -PassThru not specified' {
+            $testDir = Join-Path $TestDrive 'no_passthru_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
-    Context 'PassThru parameter' {
-        It 'Should return FileInfo when PassThru is specified' {
-            $result = Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath 'TestDrive:' -PassThru -Confirm:$false
-            $result | Should -Not -BeNullOrEmpty
-        }
+            Mock Invoke-WebRequest { }
 
-        It 'Should return nothing by default' {
-            $result = Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath 'TestDrive:' -Confirm:$false
+            $result = Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir
             $result | Should -BeNullOrEmpty
         }
     }
 
     Context 'Pipeline support' {
-        It 'Should accept ReleaseName from pipeline' {
-            $object = [PSCustomObject]@{ ReleaseName = 'Test.Release-GROUP'; FileName = 'proof.jpg' }
-            $object | Get-SatFile -OutPath 'TestDrive:' -Confirm:$false
-            Should -Invoke Invoke-WebRequest
+        BeforeAll {
+            $script:testDir = Join-Path $TestDrive 'pipeline_test'
+            New-Item -Path $script:testDir -ItemType Directory -Force | Out-Null
         }
 
-        It 'Should accept FileName from pipeline' {
-            $object = [PSCustomObject]@{ ReleaseName = 'Test.Release-GROUP'; FileName = 'proof.jpg' }
-            $object | Get-SatFile -OutPath 'TestDrive:' -Confirm:$false
-            Should -Invoke Invoke-WebRequest
+        It 'Should accept ReleaseName from pipeline by property name' {
+            Mock Invoke-WebRequest { }
+
+            $obj = [PSCustomObject]@{
+                ReleaseName = 'Pipeline.Release-GROUP'
+                FileName    = 'test.jpg'
+            }
+            $obj | Get-SatFile -OutPath $script:testDir
+            Should -Invoke Invoke-WebRequest -Times 1
+        }
+
+        It 'Should accept Release alias from pipeline' {
+            Mock Invoke-WebRequest { }
+
+            $obj = [PSCustomObject]@{
+                Release  = 'Alias.Release-GROUP'
+                FileName = 'test.jpg'
+            }
+            $obj | Get-SatFile -OutPath $script:testDir
+            Should -Invoke Invoke-WebRequest -Times 1
+        }
+
+        It 'Should accept File alias for FileName from pipeline' {
+            Mock Invoke-WebRequest { }
+
+            $obj = [PSCustomObject]@{
+                ReleaseName = 'File.Alias.Release-GROUP'
+                File        = 'aliased.jpg'
+            }
+            $obj | Get-SatFile -OutPath $script:testDir
+            Should -Invoke Invoke-WebRequest -Times 1
         }
     }
 
-    Context 'ShouldProcess support' {
-        It 'Should support WhatIf' {
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath 'TestDrive:' -WhatIf
-            Should -Not -Invoke Invoke-WebRequest
+    Context 'URL encoding' {
+        It 'Should construct correct download URL' {
+            $testDir = Join-Path $TestDrive 'url_encoding_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $Uri -eq 'https://www.srrdb.com/download/file/Test.Release-GROUP/proof.jpg'
+            }
+        }
+
+        It 'Should preserve forward slashes in file path' {
+            $testDir = Join-Path $TestDrive 'slash_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/subdir/proof.jpg' -OutPath $testDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $Uri -eq 'https://www.srrdb.com/download/file/Test.Release-GROUP/Proof/subdir/proof.jpg'
+            }
+        }
+
+        It 'Should URL-encode spaces in release name' {
+            $testDir = Join-Path $TestDrive 'space_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test Release' -FileName 'file.jpg' -OutPath $testDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $Uri -eq 'https://www.srrdb.com/download/file/Test%20Release/file.jpg'
+            }
+        }
+
+        It 'Should URL-encode each path segment individually' {
+            $testDir = Join-Path $TestDrive 'segment_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Sample/sample.mkv' -OutPath $testDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                # Forward slashes should be preserved (not encoded as %2F)
+                $Uri -like '*Sample/sample.mkv*' -and $Uri -notlike '*%2F*'
+            }
+        }
+    }
+
+    Context 'Filename sanitization' {
+        BeforeAll {
+            $script:sanitizeDir = Join-Path $TestDrive 'sanitize_test'
+            New-Item -Path $script:sanitizeDir -ItemType Directory -Force | Out-Null
+        }
+
+        It 'Should sanitize invalid characters in filename' {
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'bad:file*name?.jpg' -OutPath $script:sanitizeDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $OutFile -match 'bad_file_name_\.jpg$'
+            }
+        }
+
+        It 'Should extract filename from path with subdirectories' {
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/subdir/actual_file.jpg' -OutPath $script:sanitizeDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $OutFile -match 'actual_file\.jpg$'
+            }
+        }
+
+        It 'Should handle pipe character in filename' {
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'file|name.jpg' -OutPath $script:sanitizeDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $OutFile -match 'file_name\.jpg$'
+            }
         }
     }
 
     Context 'Error handling' {
-        It 'Should throw on download failure' {
-            Mock Invoke-WebRequest { throw "Download failed" }
-            { Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath 'TestDrive:' -Confirm:$false } |
+        It 'Should throw when OutPath directory does not exist' {
+            { Get-SatFile -ReleaseName 'Test.Release' -FileName 'file.jpg' -OutPath 'C:\NonExistent\Path\That\Does\Not\Exist' } |
+                Should -Throw "*Directory does not exist*"
+        }
+
+        It 'Should throw descriptive error when download fails' {
+            $testDir = Join-Path $TestDrive 'error_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { throw "404 Not Found" }
+
+            { Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'missing.jpg' -OutPath $testDir } |
                 Should -Throw "*Failed to download*"
         }
 
-        It 'Should throw when OutPath directory does not exist' {
-            { Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath 'C:\NonExistent\Path\That\Does\Not\Exist' } |
-                Should -Throw "*Directory does not exist*"
+        It 'Should include release and filename in error message' {
+            $testDir = Join-Path $TestDrive 'error_msg_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { throw "Connection failed" }
+
+            { Get-SatFile -ReleaseName 'Some.Release-GRP' -FileName 'proof.jpg' -OutPath $testDir } |
+                Should -Throw "*proof.jpg*Some.Release-GRP*"
+        }
+    }
+
+    Context 'WhatIf support' {
+        It 'Should not download when -WhatIf specified' {
+            $testDir = Join-Path $TestDrive 'whatif_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir -WhatIf
+
+            Should -Invoke Invoke-WebRequest -Times 0
         }
     }
 }
