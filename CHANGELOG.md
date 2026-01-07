@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-07
+
+### Added
+
+- `Get-SatReleaseFile` - High-level function to download all files for a release
+  - Searches for release (exact match first, then fuzzy fallback)
+  - Downloads SRR file via `Get-SatSrr`
+  - Downloads additional files (proofs, NFOs) via `Get-SatFile`
+  - Skips SRR/SRS files and existing local files
+  - `-PassThru` switch returns structured result with `ReleaseName`, `SrrFile`, and `AdditionalFiles`
+  - `-SkipAdditionalFiles` switch to download only the SRR
+
 ## [0.3.0] - 2026-01-07
 
 ### Added
@@ -61,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive Pester test suite
 - Full comment-based help documentation
 
+[0.4.0]: https://github.com/tablackburn/SrrDBAutomationToolkit/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tablackburn/SrrDBAutomationToolkit/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/tablackburn/SrrDBAutomationToolkit/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/tablackburn/SrrDBAutomationToolkit/compare/v0.2.0...v0.2.1
