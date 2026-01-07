@@ -9,6 +9,7 @@ BeforeAll {
 Describe 'Get-SatFile' {
     BeforeAll {
         Mock Invoke-WebRequest { }
+        Mock Get-Item { return [PSCustomObject]@{ FullName = 'C:\Test\proof.jpg' } }
     }
 
     Context 'Basic download functionality' {
@@ -25,7 +26,6 @@ Describe 'Get-SatFile' {
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
             Mock Invoke-WebRequest { }
-            Mock Get-Item { [PSCustomObject]@{ Name = 'proof.jpg'; FullName = "$testDir\proof.jpg" } }
 
             { Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir } | Should -Not -Throw
             Should -Invoke Invoke-WebRequest -Times 1
@@ -47,6 +47,16 @@ Describe 'Get-SatFile' {
             New-Item -Path $testDir -ItemType Directory -Force | Out-Null
 
             Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg' -OutPath $testDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                $OutFile -match 'proof\.jpg$'
+            }
+        }
+
+        It 'Should download to current directory when OutPath not specified' {
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'proof.jpg'
 
             Should -Invoke Invoke-WebRequest -ParameterFilter {
                 $OutFile -match 'proof\.jpg$'
@@ -160,18 +170,32 @@ Describe 'Get-SatFile' {
                 $Uri -eq 'https://www.srrdb.com/download/file/Test%20Release/file.jpg'
             }
         }
+
+        It 'Should URL-encode each path segment individually' {
+            $testDir = Join-Path $TestDrive 'segment_test'
+            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+
+            Mock Invoke-WebRequest { }
+
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Sample/sample.mkv' -OutPath $testDir
+
+            Should -Invoke Invoke-WebRequest -ParameterFilter {
+                # Forward slashes should be preserved (not encoded as %2F)
+                $Uri -like '*Sample/sample.mkv*' -and $Uri -notlike '*%2F*'
+            }
+        }
     }
 
     Context 'Filename sanitization' {
         BeforeAll {
-            $testDir = Join-Path $TestDrive 'sanitize_test'
-            New-Item -Path $testDir -ItemType Directory -Force | Out-Null
+            $script:sanitizeDir = Join-Path $TestDrive 'sanitize_test'
+            New-Item -Path $script:sanitizeDir -ItemType Directory -Force | Out-Null
         }
 
         It 'Should sanitize invalid characters in filename' {
             Mock Invoke-WebRequest { }
 
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'bad:file*name?.jpg' -OutPath $testDir
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'bad:file*name?.jpg' -OutPath $script:sanitizeDir
 
             Should -Invoke Invoke-WebRequest -ParameterFilter {
                 $OutFile -match 'bad_file_name_\.jpg$'
@@ -181,7 +205,7 @@ Describe 'Get-SatFile' {
         It 'Should extract filename from path with subdirectories' {
             Mock Invoke-WebRequest { }
 
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/subdir/actual_file.jpg' -OutPath $testDir
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/subdir/actual_file.jpg' -OutPath $script:sanitizeDir
 
             Should -Invoke Invoke-WebRequest -ParameterFilter {
                 $OutFile -match 'actual_file\.jpg$'
@@ -191,7 +215,7 @@ Describe 'Get-SatFile' {
         It 'Should handle pipe character in filename' {
             Mock Invoke-WebRequest { }
 
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'file|name.jpg' -OutPath $testDir
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'file|name.jpg' -OutPath $script:sanitizeDir
 
             Should -Invoke Invoke-WebRequest -ParameterFilter {
                 $OutFile -match 'file_name\.jpg$'

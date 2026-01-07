@@ -17,7 +17,8 @@ function Get-SatFile {
         Can include path components (e.g., "Proof/proof.jpg").
 
     .PARAMETER OutPath
-        The directory where the file should be saved.
+        The directory where the file should be saved. Defaults to the current
+        directory if not specified.
         The file will be saved with its original filename (path components stripped).
 
     .PARAMETER PassThru
@@ -49,7 +50,7 @@ function Get-SatFile {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([void])]
-    [OutputType([System.IO.FileInfo], ParameterSetName = 'PassThru')]
+    [OutputType([System.IO.FileInfo])]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias('Release', 'Name')]
@@ -63,7 +64,7 @@ function Get-SatFile {
         [string]
         $FileName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({
             if (-not (Test-Path -Path $_ -PathType Container)) {
@@ -91,20 +92,27 @@ function Get-SatFile {
 
             # Extract just the filename (last path component) for local storage
             $localFileName = Split-Path -Path $FileName -Leaf
-            # Sanitize filename to remove invalid filesystem characters
-            $safeFileName = $localFileName -replace '[\\/:*?"<>|]', '_'
-            $filePath = Join-Path -Path $OutPath -ChildPath $safeFileName
+            # Sanitize filename to remove invalid filesystem characters using platform-specific rules
+            $safeFileName = $localFileName
+            $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+            foreach ($char in $invalidChars) {
+                $safeFileName = $safeFileName.Replace($char, '_')
+            }
+            
+            # Use OutPath if specified, otherwise current directory
+            $targetPath = if ($OutPath) { $OutPath } else { Get-Location -PSProvider FileSystem | Select-Object -ExpandProperty Path }
+            $filePath = Join-Path -Path $targetPath -ChildPath $safeFileName
 
             Write-Verbose "Downloading file: $downloadUrl"
 
             if ($PSCmdlet.ShouldProcess("$ReleaseName/$FileName", "Download file to $filePath")) {
-                $webRequestParams = @{
+                $webRequestParameters = @{
                     Uri         = $downloadUrl
                     OutFile     = $filePath
                     ErrorAction = 'Stop'
                 }
 
-                Invoke-WebRequest @webRequestParams
+                Invoke-WebRequest @webRequestParameters
 
                 Write-Verbose "File saved to: $filePath"
 
@@ -114,7 +122,8 @@ function Get-SatFile {
             }
         }
         catch {
-            throw "Failed to download '$FileName' for '$ReleaseName': $($_.Exception.Message)"
+            $errorRecord = $_
+            throw "Failed to download '$FileName' for '$ReleaseName': $($errorRecord.Exception.Message)"
         }
     }
 }
