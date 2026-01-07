@@ -96,6 +96,20 @@ Describe 'Get-SatReleaseFile' {
                 $ReleaseName -eq 'Test.Release-GROUP'
             }
         }
+
+        It 'Should use first result when no exact match found in array' {
+            Mock Search-SatRelease {
+                return @(
+                    [PSCustomObject]@{ Release = 'Similar.Release-GROUP1' }
+                    [PSCustomObject]@{ Release = 'Similar.Release-GROUP2' }
+                )
+            }
+
+            Get-SatReleaseFile -ReleaseName 'NonMatching.Release' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatSrr -ParameterFilter {
+                $ReleaseName -eq 'Similar.Release-GROUP1'
+            }
+        }
     }
 
     Context 'SRR download' {
@@ -104,6 +118,19 @@ Describe 'Get-SatReleaseFile' {
             Should -Invoke Get-SatSrr -ParameterFilter {
                 $ReleaseName -eq 'Test.Release-GROUP' -and
                 $OutPath -eq $script:testDir
+            }
+        }
+
+        It 'Should use current directory when OutPath not specified' {
+            Push-Location $script:testDir
+            try {
+                Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -Confirm:$false
+                Should -Invoke Get-SatSrr -ParameterFilter {
+                    $OutPath -eq $script:testDir
+                }
+            }
+            finally {
+                Pop-Location
             }
         }
     }
