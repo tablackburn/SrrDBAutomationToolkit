@@ -1,0 +1,190 @@
+BeforeAll {
+    $ProjectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    $ModuleRoot = Join-Path $ProjectRoot 'SrrDBAutomationToolkit'
+
+    # Import required functions
+    . (Join-Path $ModuleRoot 'Public\Get-SatReleaseFile.ps1')
+}
+
+Describe 'Get-SatReleaseFile' {
+    BeforeAll {
+        # Create a temp directory for tests
+        $script:testDir = Join-Path $TestDrive 'GetSatReleaseFile'
+        New-Item -Path $script:testDir -ItemType Directory -Force | Out-Null
+
+        # Mock the underlying functions
+        Mock Search-SatRelease {
+            return [PSCustomObject]@{
+                Release = 'Test.Release-GROUP'
+                Date    = '2024-01-01'
+                HasNfo  = $true
+                HasSrs  = $false
+            }
+        }
+
+        Mock Get-SatSrr {
+            if ($PassThru) {
+                return [PSCustomObject]@{
+                    FullName = "$script:testDir\Test.Release-GROUP.srr"
+                    Name     = "Test.Release-GROUP.srr"
+                }
+            }
+        }
+
+        Mock Get-SatRelease {
+            return [PSCustomObject]@{
+                Name  = 'Test.Release-GROUP'
+                Files = @(
+                    @{ name = 'proof.jpg' }
+                    @{ name = 'release.nfo' }
+                    @{ name = 'release.srr' }  # Should be skipped
+                    @{ name = 'sample.srs' }   # Should be skipped
+                )
+            }
+        }
+
+        Mock Get-SatFile {
+            if ($PassThru) {
+                return [PSCustomObject]@{
+                    FullName = "$script:testDir\$($FileName)"
+                    Name     = $FileName
+                }
+            }
+        }
+    }
+
+    Context 'Search functionality' {
+        It 'Should search for release by exact name first' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Search-SatRelease -ParameterFilter {
+                $ReleaseName -eq 'Test.Release-GROUP'
+            }
+        }
+
+        It 'Should fall back to fuzzy search when exact match fails' {
+            Mock Search-SatRelease {
+                if ($ReleaseName) { return $null }
+                if ($Query) {
+                    return [PSCustomObject]@{
+                        Release = 'Test.Release-GROUP'
+                        Date    = '2024-01-01'
+                    }
+                }
+            }
+
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Search-SatRelease -Times 2
+        }
+
+        It 'Should throw when release not found' {
+            Mock Search-SatRelease { return $null }
+            { Get-SatReleaseFile -ReleaseName 'NonExistent.Release' -OutPath $script:testDir -Confirm:$false } |
+                Should -Throw "*Release not found on srrDB*"
+        }
+
+        It 'Should select exact match from multiple results' {
+            Mock Search-SatRelease {
+                return @(
+                    [PSCustomObject]@{ Release = 'Other.Release-GROUP' }
+                    [PSCustomObject]@{ Release = 'Test.Release-GROUP' }
+                    [PSCustomObject]@{ Release = 'Another.Release-GROUP' }
+                )
+            }
+
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatSrr -ParameterFilter {
+                $ReleaseName -eq 'Test.Release-GROUP'
+            }
+        }
+    }
+
+    Context 'SRR download' {
+        It 'Should download SRR file' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatSrr -ParameterFilter {
+                $ReleaseName -eq 'Test.Release-GROUP' -and
+                $OutPath -eq $script:testDir
+            }
+        }
+    }
+
+    Context 'Additional files download' {
+        It 'Should get release details for additional files' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatRelease
+        }
+
+        It 'Should download proof and nfo files' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'proof.jpg' }
+            Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'release.nfo' }
+        }
+
+        It 'Should skip SRR and SRS files' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'release.srr' }
+            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'sample.srs' }
+        }
+
+        It 'Should skip existing files' {
+            Mock Test-Path { return $true }
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Not -Invoke Get-SatFile
+        }
+
+        It 'Should skip additional files when SkipAdditionalFiles is specified' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -SkipAdditionalFiles -Confirm:$false
+            Should -Not -Invoke Get-SatRelease
+            Should -Not -Invoke Get-SatFile
+        }
+    }
+
+    Context 'PassThru parameter' {
+        It 'Should return result object when PassThru is specified' {
+            $result = Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -PassThru -Confirm:$false
+            $result | Should -Not -BeNullOrEmpty
+            $result.ReleaseName | Should -Be 'Test.Release-GROUP'
+            $result.SrrFile | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Should return nothing by default' {
+            $result = Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'Pipeline support' {
+        It 'Should accept pipeline input' {
+            'Test.Release-GROUP' | Get-SatReleaseFile -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatSrr
+        }
+
+        It 'Should accept Release property from pipeline' {
+            $searchResult = [PSCustomObject]@{ Release = 'Test.Release-GROUP' }
+            $searchResult | Get-SatReleaseFile -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatSrr
+        }
+    }
+
+    Context 'ShouldProcess support' {
+        It 'Should support WhatIf' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -WhatIf
+            Should -Not -Invoke Get-SatSrr
+            Should -Not -Invoke Get-SatFile
+        }
+    }
+
+    Context 'Error handling' {
+        It 'Should throw when OutPath directory does not exist' {
+            { Get-SatReleaseFile -ReleaseName 'Test.Release' -OutPath 'C:\NonExistent\Path\That\Does\Not\Exist' } |
+                Should -Throw "*Directory does not exist*"
+        }
+
+        It 'Should continue when additional file download fails' {
+            Mock Get-SatFile { throw "Download failed" }
+            # Should not throw, just warn
+            { Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false } |
+                Should -Not -Throw
+        }
+    }
+}
