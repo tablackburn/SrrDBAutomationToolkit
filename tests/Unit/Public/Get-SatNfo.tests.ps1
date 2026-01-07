@@ -173,6 +173,7 @@ Describe 'Get-SatNfo' {
             $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
             $invalidPattern = '[' + [regex]::Escape([string]::new($invalidChars)) + ']'
             $result.Name | Should -Not -Match $invalidPattern
+        }
 
         It 'Should handle array response for nfo and nfolink' {
             Mock Invoke-SatApi {

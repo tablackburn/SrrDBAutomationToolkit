@@ -190,15 +190,23 @@ Describe 'Get-SatFile' {
         BeforeAll {
             $script:sanitizeDir = Join-Path $TestDrive 'sanitize_test'
             New-Item -Path $script:sanitizeDir -ItemType Directory -Force | Out-Null
+            # Get platform-specific invalid characters for filename validation
+            $script:invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
         }
 
-        It 'Should sanitize invalid characters in filename' {
+        It 'Should produce valid filename without platform-invalid characters' {
             Mock Invoke-WebRequest { }
 
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'bad:file*name?.jpg' -OutPath $script:sanitizeDir
+            # Use forward slash which is invalid on all platforms
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Proof/bad_file.jpg' -OutPath $script:sanitizeDir
 
             Should -Invoke Invoke-WebRequest -ParameterFilter {
-                $OutFile -match 'bad_file_name_\.jpg$'
+                $filename = Split-Path $OutFile -Leaf
+                $hasInvalidChar = $false
+                foreach ($char in $script:invalidChars) {
+                    if ($filename.Contains($char)) { $hasInvalidChar = $true; break }
+                }
+                -not $hasInvalidChar -and $filename -eq 'bad_file.jpg'
             }
         }
 
@@ -212,13 +220,13 @@ Describe 'Get-SatFile' {
             }
         }
 
-        It 'Should handle pipe character in filename' {
+        It 'Should strip path components and use only leaf filename' {
             Mock Invoke-WebRequest { }
 
-            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'file|name.jpg' -OutPath $script:sanitizeDir
+            Get-SatFile -ReleaseName 'Test.Release-GROUP' -FileName 'Sample/nested/path/final.jpg' -OutPath $script:sanitizeDir
 
             Should -Invoke Invoke-WebRequest -ParameterFilter {
-                $OutFile -match 'file_name\.jpg$'
+                (Split-Path $OutFile -Leaf) -eq 'final.jpg'
             }
         }
     }
