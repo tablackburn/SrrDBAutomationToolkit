@@ -9,7 +9,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Get PowerShell module path
       id: psmodulepath
@@ -21,7 +21,7 @@ jobs:
         "path=$path" >> $env:GITHUB_OUTPUT
 
     - name: Cache PowerShell modules
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ steps.psmodulepath.outputs.path }}
         key: ${{ runner.os }}-psmodules-${{ hashFiles('build.depend.psd1') }}
@@ -42,7 +42,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always()
       with:
         name: test-results-${{ matrix.os }}
