@@ -103,7 +103,7 @@ Describe 'Get-SatFile' {
         }
 
         It 'Should accept FileName from pipeline' {
-            $object = [PSCustomObject]@{ Release = 'Test.Release-GROUP'; File = 'proof.jpg' }
+            $object = [PSCustomObject]@{ ReleaseName = 'Test.Release-GROUP'; FileName = 'proof.jpg' }
             $object | Get-SatFile -OutPath 'TestDrive:' -Confirm:$false
             Should -Invoke Invoke-WebRequest
         }

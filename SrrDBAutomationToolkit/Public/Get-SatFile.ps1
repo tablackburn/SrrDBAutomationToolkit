@@ -93,9 +93,11 @@ function Get-SatFile {
             # Extract just the filename (last path component) for local storage
             $localFileName = Split-Path -Path $FileName -Leaf
             # Sanitize filename to remove invalid filesystem characters using platform-specific rules
-            $invalidChars     = [System.IO.Path]::GetInvalidFileNameChars()
-            $invalidCharClass = '[{0}]' -f [System.Text.RegularExpressions.Regex]::Escape(-join $invalidChars)
-            $safeFileName     = [System.Text.RegularExpressions.Regex]::Replace($localFileName, $invalidCharClass, '_')
+            $safeFileName = $localFileName
+            $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+            foreach ($char in $invalidChars) {
+                $safeFileName = $safeFileName.Replace($char, '_')
+            }
             
             # Use OutPath if specified, otherwise current directory
             $targetPath = if ($OutPath) { $OutPath } else { Get-Location -PSProvider FileSystem | Select-Object -ExpandProperty Path }
