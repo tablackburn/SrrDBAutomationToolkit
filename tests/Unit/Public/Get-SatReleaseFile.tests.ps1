@@ -35,10 +35,19 @@ Describe 'Get-SatReleaseFile' {
             return [PSCustomObject]@{
                 Name  = 'Test.Release-GROUP'
                 Files = @(
-                    @{ name = 'proof.jpg' }
-                    @{ name = 'release.nfo' }
-                    @{ name = 'release.srr' }  # Should be skipped
-                    @{ name = 'sample.srs' }   # Should be skipped
+                    @{ name = 'Proof/proof.jpg' }       # Should be downloaded (proof image)
+                    @{ name = 'release.nfo' }           # Should be downloaded
+                    @{ name = 'release.sfv' }           # Should be downloaded
+                    @{ name = 'info.txt' }              # Should be downloaded (txt file)
+                    @{ name = 'Proof/proof2.JPG' }      # Should be downloaded (uppercase extension)
+                    @{ name = 'release.srr' }           # Should be skipped (SRR)
+                    @{ name = 'Sample/sample.srs' }     # Should be skipped (SRS)
+                    @{ name = 'release.rar' }           # Should be skipped (not hosted)
+                    @{ name = 'release.r00' }           # Should be skipped (not hosted)
+                    @{ name = 'Sample/sample.mkv' }     # Should be skipped (not hosted)
+                    @{ name = 'README' }                # Should be skipped (no extension)
+                    @{ name = $null }                   # Should be skipped (null name)
+                    @{ name = '   ' }                   # Should be skipped (whitespace-only)
                 )
             }
         }
@@ -141,16 +150,46 @@ Describe 'Get-SatReleaseFile' {
             Should -Invoke Get-SatRelease
         }
 
-        It 'Should download proof and nfo files' {
+        It 'Should download proof, nfo, and sfv files' {
             Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
-            Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'proof.jpg' }
+            Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'Proof/proof.jpg' }
             Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'release.nfo' }
+            Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'release.sfv' }
         }
 
         It 'Should skip SRR and SRS files' {
             Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
             Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'release.srr' }
-            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'sample.srs' }
+            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'Sample/sample.srs' }
+        }
+
+        It 'Should skip files not hosted by srrDB (RAR, media)' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'release.rar' }
+            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'release.r00' }
+            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'Sample/sample.mkv' }
+        }
+
+        It 'Should skip files without extensions' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Not -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'README' }
+        }
+
+        It 'Should skip files with null or whitespace names' {
+            # This test verifies that null and whitespace-only filenames don't cause errors
+            # The mock includes @{ name = $null } and @{ name = '   ' } entries
+            { Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false } |
+                Should -Not -Throw
+        }
+
+        It 'Should download txt files' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'info.txt' }
+        }
+
+        It 'Should handle extensions case-insensitively' {
+            Get-SatReleaseFile -ReleaseName 'Test.Release-GROUP' -OutPath $script:testDir -Confirm:$false
+            Should -Invoke Get-SatFile -ParameterFilter { $FileName -eq 'Proof/proof2.JPG' }
         }
 
         It 'Should skip existing files' {
