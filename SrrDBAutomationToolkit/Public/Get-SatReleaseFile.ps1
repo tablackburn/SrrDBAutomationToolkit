@@ -130,13 +130,25 @@ function Get-SatReleaseFile {
                 if ($releaseDetails.Files -and $releaseDetails.Files.Count -gt 0) {
                     Write-Verbose "Found $($releaseDetails.Files.Count) files on srrDB"
 
+                    # File types that srrDB actually hosts for download
+                    # Based on empirical testing: .nfo, .sfv, .txt, proof images return 200
+                    # RARs, media files, and files without extensions return 404
+                    $downloadableExtensions = @('.nfo', '.sfv', '.txt', '.jpg', '.jpeg', '.png')
+
                     foreach ($file in $releaseDetails.Files) {
                         $fileName = $file.name
-                        if (-not $fileName) { continue }
+                        if ([string]::IsNullOrWhiteSpace($fileName)) { continue }
 
                         # Skip SRR and SRS files (SRS should be embedded in SRR)
                         if ($fileName -match '\.(srr|srs)$') {
                             Write-Verbose "Skipping $fileName (SRR/SRS file)"
+                            continue
+                        }
+
+                        # Only attempt to download file types that srrDB actually hosts
+                        $fileExtension = [System.IO.Path]::GetExtension($fileName).ToLower()
+                        if (-not $fileExtension -or $fileExtension -notin $downloadableExtensions) {
+                            Write-Verbose "Skipping $fileName (file type not hosted by srrDB)"
                             continue
                         }
 
