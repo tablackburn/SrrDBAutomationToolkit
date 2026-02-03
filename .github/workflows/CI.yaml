@@ -1,54 +1,132 @@
 name: CI
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
 jobs:
+  lint:
+    name: PSScriptAnalyzer Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Cache PSDepend module
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: PSDepend
+
+      - name: Install PSDepend
+        shell: pwsh
+        run: |
+          if (-not (Get-Module -Name 'PSDepend' -ListAvailable)) {
+            $null = Get-PackageProvider -Name 'NuGet' -ForceBootstrap
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
+            Install-Module -Name 'PSDepend' -Scope 'CurrentUser' -Repository 'PSGallery' -Force
+          }
+
+      - name: Get dependency list for caching
+        id: deps
+        shell: pwsh
+        run: |
+          Import-Module PSDepend -Verbose:$false
+          $modules = @()
+          if (Test-Path 'build.depend.psd1') {
+            $deps = Get-Dependency -Path 'build.depend.psd1'
+            foreach ($dep in $deps) {
+              if ($dep.DependencyName -and $dep.Version) {
+                $modules += "$($dep.DependencyName):$($dep.Version)"
+              }
+            }
+          }
+          $moduleList = $modules -join ', '
+          "modules=$moduleList" >> $env:GITHUB_OUTPUT
+          Write-Host "Modules to cache: $moduleList"
+
+      - name: Cache PowerShell modules
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: ${{ steps.deps.outputs.modules }}
+
+      - name: Install dependencies
+        shell: pwsh
+        run: ./build.ps1 -Bootstrap -Task Init
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: ./build.ps1 -Task Analyze
+
   test:
-    name: Run Tests
+    name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
-    - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v6
 
-    - name: Get PowerShell module path
-      id: psmodulepath
-      shell: pwsh
-      run: |
-        $path = ($env:PSModulePath -split [IO.Path]::PathSeparator |
-          Where-Object { $_ -like "*$env:HOME*" -or $_ -like "*$env:USERPROFILE*" } |
-          Select-Object -First 1)
-        "path=$path" >> $env:GITHUB_OUTPUT
+      - name: Cache PSDepend module
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: PSDepend
 
-    - name: Cache PowerShell modules
-      uses: actions/cache@v5
-      with:
-        path: ${{ steps.psmodulepath.outputs.path }}
-        key: ${{ runner.os }}-psmodules-${{ hashFiles('build.depend.psd1') }}
+      - name: Install PSDepend
+        shell: pwsh
+        run: |
+          if (-not (Get-Module -Name 'PSDepend' -ListAvailable)) {
+            $null = Get-PackageProvider -Name 'NuGet' -ForceBootstrap
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
+            Install-Module -Name 'PSDepend' -Scope 'CurrentUser' -Repository 'PSGallery' -Force
+          }
 
-    - name: Test
-      shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Path out -Force | Out-Null
-        ./build.ps1 -Task Test -Bootstrap
+      - name: Get dependency list for caching
+        id: deps
+        shell: pwsh
+        run: |
+          Import-Module PSDepend -Verbose:$false
+          $modules = @()
+          if (Test-Path 'build.depend.psd1') {
+            $deps = Get-Dependency -Path 'build.depend.psd1'
+            foreach ($dep in $deps) {
+              if ($dep.DependencyName -and $dep.Version) {
+                $modules += "$($dep.DependencyName):$($dep.Version)"
+              }
+            }
+          }
+          $moduleList = $modules -join ', '
+          "modules=$moduleList" >> $env:GITHUB_OUTPUT
+          Write-Host "Modules to cache: $moduleList"
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
-      if: success()
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: out/codeCoverage.xml
-        flags: ${{ matrix.os }}
-        fail_ci_if_error: false
+      - name: Cache PowerShell modules
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: ${{ steps.deps.outputs.modules }}
 
-    - name: Upload test results
-      uses: actions/upload-artifact@v6
-      if: always()
-      with:
-        name: test-results-${{ matrix.os }}
-        path: out/
-        retention-days: 30
+      - name: Run tests
+        shell: pwsh
+        run: ./build.ps1 -Bootstrap -Task Test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: success()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: out/codeCoverage.xml
+          flags: ${{ matrix.os }}
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: out/
+          retention-days: 30
