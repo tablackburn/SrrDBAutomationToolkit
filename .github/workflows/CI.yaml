@@ -115,7 +115,7 @@ jobs:
         run: ./build.ps1 -Bootstrap -Task Test
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         if: success()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
