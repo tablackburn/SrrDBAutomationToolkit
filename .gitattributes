@@ -1,1 +1,11 @@
-* -crlf
+# Normalize line endings to LF in both the repo and the working tree, regardless of
+# the contributor's global core.autocrlf setting. PowerShell on Windows handles LF
+# fine. Without this, Windows clones with core.autocrlf=true emit "LF will be
+# replaced by CRLF the next time Git touches it" warnings on every commit when
+# files are edited by tooling that writes LF (most editors and AI agents do).
+#
+# Replaces the older `* -crlf` rule, which only disabled CRLF conversion (so
+# files kept whatever endings they had on commit) but did not coerce a single
+# convention. The renormalize commit immediately following this change converts
+# the repo's mixed endings to LF — see .git-blame-ignore-revs.
+* text=auto eol=lf
