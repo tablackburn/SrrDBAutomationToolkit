@@ -78,5 +78,5 @@ jobs:
         if: steps.check_release.outputs.exists == 'false' && steps.check_psgallery.outputs.exists == 'false'
         shell: pwsh
         env:
-          PSGALLERY_API_KEY: ${{ secrets.PS_GALLERY_KEY }}
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
         run: ./build.ps1 -Task Publish -Bootstrap
