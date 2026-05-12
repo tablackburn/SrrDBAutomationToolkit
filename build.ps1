@@ -40,6 +40,7 @@ param(
                 @()
             }
         })]
+    [ValidateNotNullOrEmpty()]
     [string[]]$Task = 'default',
 
     # Bootstrap dependencies
