@@ -92,7 +92,7 @@ Task -Name 'UpdateReleaseNotes' -Depends 'Build' -Description 'Set built manifes
     catch {
         # Keep publishing unblocked: a failure here just leaves the manifest's existing
         # ReleaseNotes in place rather than aborting the release.
-        Write-Warning "Failed to set ReleaseNotes on the built manifest ($($_.Exception.Message)); leaving it unchanged."
+        Write-Warning "Failed to set ReleaseNotes on the built manifest '$builtManifest' ($($_.Exception.Message)); leaving it unchanged."
     }
 }
 
