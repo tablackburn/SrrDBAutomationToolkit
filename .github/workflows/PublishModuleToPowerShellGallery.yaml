@@ -47,7 +47,8 @@ jobs:
 
       - name: Check if PSGallery Version Exists
         id: check_psgallery
-        if: steps.check_release.outputs.exists == 'false'
+        # Runs unconditionally so a release that was created but never published can
+        # still be recovered (see Publish gating below).
         shell: pwsh
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -63,7 +64,7 @@ jobs:
           }
 
       - name: Bootstrap
-        if: steps.check_release.outputs.exists == 'false'
+        if: steps.check_release.outputs.exists == 'false' || steps.check_psgallery.outputs.exists == 'false'
         shell: pwsh
         run: ./build.ps1 -Task Init -Bootstrap
 
@@ -124,7 +125,7 @@ jobs:
           }
 
       - name: Publish to PSGallery
-        if: steps.check_release.outputs.exists == 'false' && steps.check_psgallery.outputs.exists == 'false'
+        if: steps.check_psgallery.outputs.exists == 'false'
         shell: pwsh
         env:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
