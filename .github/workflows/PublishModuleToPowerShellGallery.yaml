@@ -54,10 +54,17 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           $version = $env:VERSION
-          $published = Find-Module -Name SrrDBAutomationToolkit -RequiredVersion $version -Repository PSGallery -ErrorAction SilentlyContinue
+          $findError = $null
+          $published = Find-Module -Name SrrDBAutomationToolkit -RequiredVersion $version -Repository PSGallery -ErrorAction SilentlyContinue -ErrorVariable findError
           if ($published) {
             Write-Host "PSGallery version $version already exists"
             "exists=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } elseif ($findError) {
+            # Find-Module records no error when the version simply isn't on the gallery,
+            # so a recorded error means the query itself failed (transient/network). Don't
+            # treat that as "not published" (publishing is now gated only on this check) —
+            # fail so the run is visibly retryable instead of attempting a blind publish.
+            throw "PowerShell Gallery query failed for version ${version}: $($findError[0].Exception.Message)"
           } else {
             Write-Host "PSGallery version $version not found - will publish"
             "exists=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
