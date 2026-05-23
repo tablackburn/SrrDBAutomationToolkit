@@ -134,11 +134,16 @@ BeforeAll {
 Describe "Test help for <_.Name>" -ForEach $commands {
 
     BeforeDiscovery {
-        # Get command help, parameters, and links
+        # Get command help, parameters, and links. These are duplicated in BeforeAll
+        # below; they must also exist here because the nested Context blocks use them in
+        # -ForEach, which Pester evaluates during discovery (before BeforeAll runs).
         $command               = $_
+        $commandName           = $command.Name
         $commandHelp           = Get-Help -Name $command.Name -ErrorAction 'SilentlyContinue'
         $commandParameters     = global:FilterOutCommonParameters -Parameters $command.ParameterSets.Parameters
         $commandParameterNames = $commandParameters.Name
+        $helpParameters        = global:FilterOutCommonParameters -Parameters $commandHelp.Parameters.Parameter
+        $helpParameterNames    = $helpParameters.Name
         $helpLinks             = $commandHelp.relatedLinks.navigationLink.uri | Where-Object { $_ -match '^https?://' }
     }
 
