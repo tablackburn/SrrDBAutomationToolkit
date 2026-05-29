@@ -23,7 +23,7 @@
         Version = '0.7.3'
     }
     'PSScriptAnalyzer' = @{
-        Version = '1.24.0'
+        Version = '1.25.0'
     }
     # Parses CHANGELOG.md (Keep a Changelog format) so the Publish task can populate the
     # built manifest's PSData.ReleaseNotes from the matching version's entry.
