@@ -17,10 +17,13 @@ jobs:
     steps:
       - name: Delete head branch
         run: |
-          if gh api "repos/${GITHUB_REPOSITORY}/git/refs/heads/${HEAD_REF}" >/dev/null 2>&1; then
-            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${HEAD_REF}"
-          else
-            echo "Branch does not exist (already deleted)."
+          if ! response=$(gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${HEAD_REF}" 2>&1); then
+            if echo "$response" | grep -q -E "Reference does not exist|422"; then
+              echo "Branch does not exist (already deleted)."
+            else
+              echo "Error deleting branch: $response"
+              exit 1
+            fi
           fi
         env:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}

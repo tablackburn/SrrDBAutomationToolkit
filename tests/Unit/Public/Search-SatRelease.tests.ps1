@@ -163,11 +163,11 @@ Describe 'Search-SatRelease' {
         It 'Should require Query or ReleaseName parameter' {
             $command = Get-Command Search-SatRelease
             
-            $queryParameter = $command.Parameters['Query'].Attributes | 
+            $queryParameter = $command.Parameters['Query'].Attributes |
                 Where-Object { $_.ParameterSetName -eq 'Query' }
             $queryParameter.Mandatory | Should -BeTrue
 
-            $releaseNameParameter = $command.Parameters['ReleaseName'].Attributes | 
+            $releaseNameParameter = $command.Parameters['ReleaseName'].Attributes |
                 Where-Object { $_.ParameterSetName -eq 'ReleaseName' }
             $releaseNameParameter.Mandatory | Should -BeTrue
         }
