@@ -161,8 +161,15 @@ Describe 'Search-SatRelease' {
         }
 
         It 'Should require Query or ReleaseName parameter' {
-            # The function requires either Query or ReleaseName (mandatory parameter sets)
-            { Search-SatRelease } | Should -Throw "*missing mandatory*"
+            $command = Get-Command Search-SatRelease
+            
+            $queryParameter = $command.Parameters['Query'].Attributes |
+                Where-Object { $_.ParameterSetName -eq 'Query' }
+            $queryParameter.Mandatory | Should -BeTrue
+
+            $releaseNameParameter = $command.Parameters['ReleaseName'].Attributes |
+                Where-Object { $_.ParameterSetName -eq 'ReleaseName' }
+            $releaseNameParameter.Mandatory | Should -BeTrue
         }
 
         It 'Should throw when ConvertTo-SatSearchQuery returns empty' {
