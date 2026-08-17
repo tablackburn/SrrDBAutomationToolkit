@@ -45,7 +45,14 @@ BeforeAll {
     }
     $ModulePath = Join-Path $Env:BHBuildOutput 'SrrDBAutomationToolkit.psd1'
 
-    if (-not (Get-Module -Name 'SrrDBAutomationToolkit')) {
+    # Match on path, not just name. Guarding on the name alone would accept whatever
+    # copy happens to be loaded -- a developer's source-tree import, say -- and quietly
+    # test that instead of the built manifest. Replace it when it is the wrong one, and
+    # leave it alone when it is right, so repeated files do not stack up copies.
+    $loadedModule = Get-Module -Name 'SrrDBAutomationToolkit'
+    $expectedBase = Split-Path -Path $ModulePath -Parent
+    if (-not $loadedModule -or $loadedModule.ModuleBase -ne $expectedBase) {
+        $loadedModule | Remove-Module -Force -ErrorAction 'SilentlyContinue'
         Import-Module $ModulePath -Force
     }
 
