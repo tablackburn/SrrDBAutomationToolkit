@@ -104,6 +104,16 @@ if ($Bootstrap) {
             throw 'Could not register the PSGallery repository; build dependencies cannot be installed.'
         }
 
+        # A repository named PSGallery is not necessarily the PowerShell Gallery. If one
+        # is already registered against a different SourceLocation, every dependency in
+        # build.depend.psd1 would be installed from it on the strength of the name alone.
+        # Refuse rather than trust the name.
+        $expectedSourceLocation = 'https://www.powershellgallery.com/api/v2'
+        $actualSourceLocation = $psGallery.SourceLocation.TrimEnd('/')
+        if ($actualSourceLocation -ne $expectedSourceLocation.TrimEnd('/')) {
+            throw "The repository named 'PSGallery' points at [$actualSourceLocation], not [$expectedSourceLocation]. Refusing to install build dependencies from an unexpected source."
+        }
+
         if ($psGallery.InstallationPolicy -ne 'Trusted') {
             Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
         }

@@ -19,6 +19,16 @@ BeforeAll {
     # before tests/Unit, so they poisoned the session for all of it.
     $ProjectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     if (-not $Env:BHBuildOutput) {
+        # Run the build, do not merely compute where its output would be. Constructing
+        # the path without producing the manifest leaves a direct run from a fresh
+        # checkout failing at Import-Module. tests/Help.tests.ps1 and
+        # tests/Manifest.tests.ps1 invoke Build in the same situation.
+        $invokePsakeParameters = @{
+            TaskList  = 'Build'
+            BuildFile = Join-Path -Path $ProjectRoot -ChildPath 'build.psake.ps1'
+        }
+        Invoke-psake @invokePsakeParameters
+
         $sourceManifest = Join-Path $ProjectRoot 'SrrDBAutomationToolkit/SrrDBAutomationToolkit.psd1'
         $moduleVersion = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
         $Env:BHBuildOutput = Join-Path $ProjectRoot "Output/SrrDBAutomationToolkit/$moduleVersion"
