@@ -78,12 +78,15 @@ BeforeAll {
     # Parse the version from the changelog
     $changelogPath = Join-Path -Path $Env:BHProjectPath -ChildPath 'CHANGELOG.md'
     $changelogVersionPattern = '^##\s\\?\[(?<Version>(\d+\.){1,3}\d+)\\?\]' # Matches on a line that starts with '## [Version]' or '## \[Version\]'
-    $changelogVersion = Get-Content $changelogPath | ForEach-Object {
-        if ($_ -match $changelogVersionPattern) {
-            $changelogVersion = $matches.Version
-            break
-        }
-    }
+    # Select-String returns the first matching line's named capture directly -- no loop
+    # and no 'break', which is unreliable inside ForEach-Object since a pipeline is not
+    # a loop: it exits the enclosing construct rather than stopping the pipeline.
+    # -List stops at the first match per file, and ForEach-Object yields nothing when
+    # there is no match -- leaving $changelogVersion null so the assertions below report
+    # it. Indexing .Matches[0] on a null pipeline result would throw a null-reference
+    # error instead, which says far less about what is actually wrong.
+    $changelogVersion = Select-String -Path $changelogPath -Pattern $changelogVersionPattern -List |
+        ForEach-Object { $_.Matches[0].Groups['Version'].Value }
 }
 Describe 'Module manifest' {
 

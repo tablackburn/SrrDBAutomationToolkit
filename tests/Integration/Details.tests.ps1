@@ -31,11 +31,40 @@ BeforeDiscovery {
 }
 
 BeforeAll {
+    # Import the built module, not the source tree. Importing from source loads a
+    # second copy alongside the one under Output/ that the build task and the unit
+    # tests use -- same name, same GUID, two different paths -- and Pester 6 then
+    # fails discovery of every InModuleScope file with "Multiple script or manifest
+    # modules named 'SrrDBAutomationToolkit' are currently loaded". These files sort
+    # before tests/Unit, so they poisoned the session for all of it.
     $ProjectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    $ModulePath = Join-Path $ProjectRoot 'SrrDBAutomationToolkit'
+    if (-not $Env:BHBuildOutput) {
+        # Run the build, do not merely compute where its output would be. Constructing
+        # the path without producing the manifest leaves a direct run from a fresh
+        # checkout failing at Import-Module. tests/Help.tests.ps1 and
+        # tests/Manifest.tests.ps1 invoke Build in the same situation.
+        $invokePsakeParameters = @{
+            TaskList  = 'Build'
+            BuildFile = Join-Path -Path $ProjectRoot -ChildPath 'build.psake.ps1'
+        }
+        Invoke-psake @invokePsakeParameters
 
-    # Import the module
-    Import-Module $ModulePath -Force
+        $sourceManifest = Join-Path $ProjectRoot 'SrrDBAutomationToolkit/SrrDBAutomationToolkit.psd1'
+        $moduleVersion = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
+        $Env:BHBuildOutput = Join-Path $ProjectRoot "Output/SrrDBAutomationToolkit/$moduleVersion"
+    }
+    $ModulePath = Join-Path $Env:BHBuildOutput 'SrrDBAutomationToolkit.psd1'
+
+    # Match on path, not just name. Guarding on the name alone would accept whatever
+    # copy happens to be loaded -- a developer's source-tree import, say -- and quietly
+    # test that instead of the built manifest. Replace it when it is the wrong one, and
+    # leave it alone when it is right, so repeated files do not stack up copies.
+    $loadedModule = Get-Module -Name 'SrrDBAutomationToolkit'
+    $expectedBase = Split-Path -Path $ModulePath -Parent
+    if (-not $loadedModule -or $loadedModule.ModuleBase -ne $expectedBase) {
+        $loadedModule | Remove-Module -Force -ErrorAction 'SilentlyContinue'
+        Import-Module $ModulePath -Force
+    }
 
     # Re-fetch test data at runtime (BeforeDiscovery variables aren't available here)
     $script:TestRelease = $null
