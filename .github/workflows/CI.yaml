@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,46 +14,15 @@ jobs:
   lint:
     name: PSScriptAnalyzer Lint
     runs-on: ubuntu-latest
+    # Guard against a hung step burning the 6-hour default. Lint normally
+    # finishes in well under a minute.
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Cache PSDepend module
-        uses: potatoqualitee/psmodulecache@v6.3
         with:
-          modules-to-cache: PSDepend
-
-      - name: Install PSDepend
-        shell: pwsh
-        run: |
-          if (-not (Get-Module -Name 'PSDepend' -ListAvailable)) {
-            $null = Get-PackageProvider -Name 'NuGet' -ForceBootstrap
-            Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
-            Install-Module -Name 'PSDepend' -Scope 'CurrentUser' -Repository 'PSGallery' -Force
-          }
-
-      - name: Get dependency list for caching
-        id: deps
-        shell: pwsh
-        run: |
-          Import-Module PSDepend -Verbose:$false
-          $modules = @()
-          if (Test-Path 'build.depend.psd1') {
-            $deps = Get-Dependency -Path 'build.depend.psd1'
-            foreach ($dep in $deps) {
-              if ($dep.DependencyName -and $dep.Version) {
-                $modules += "$($dep.DependencyName):$($dep.Version)"
-              }
-            }
-          }
-          $moduleList = $modules -join ', '
-          "modules=$moduleList" >> $env:GITHUB_OUTPUT
-          Write-Host "Modules to cache: $moduleList"
-
-      - name: Cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v6.3
-        with:
-          modules-to-cache: ${{ steps.deps.outputs.modules }}
+          # No authenticated git commands run in this job.
+          persist-credentials: false
 
       - name: Install dependencies
         shell: pwsh
@@ -65,6 +35,12 @@ jobs:
   test:
     name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Guard against a hung step burning the 6-hour default. The specific hazard
+    # this catches: BuildHelpers' Invoke-Git calls WaitForExit() before draining
+    # standard output, so on Windows a HEAD commit message larger than the
+    # 4096-byte pipe buffer deadlocks the build with no output at all. Keep
+    # merge-commit messages short.
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -72,44 +48,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Cache PSDepend module
-        uses: potatoqualitee/psmodulecache@v6.3
         with:
-          modules-to-cache: PSDepend
+          # No authenticated git commands run in this job.
+          persist-credentials: false
 
-      - name: Install PSDepend
-        shell: pwsh
-        run: |
-          if (-not (Get-Module -Name 'PSDepend' -ListAvailable)) {
-            $null = Get-PackageProvider -Name 'NuGet' -ForceBootstrap
-            Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
-            Install-Module -Name 'PSDepend' -Scope 'CurrentUser' -Repository 'PSGallery' -Force
-          }
-
-      - name: Get dependency list for caching
-        id: deps
-        shell: pwsh
-        run: |
-          Import-Module PSDepend -Verbose:$false
-          $modules = @()
-          if (Test-Path 'build.depend.psd1') {
-            $deps = Get-Dependency -Path 'build.depend.psd1'
-            foreach ($dep in $deps) {
-              if ($dep.DependencyName -and $dep.Version) {
-                $modules += "$($dep.DependencyName):$($dep.Version)"
-              }
-            }
-          }
-          $moduleList = $modules -join ', '
-          "modules=$moduleList" >> $env:GITHUB_OUTPUT
-          Write-Host "Modules to cache: $moduleList"
-
-      - name: Cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v6.3
-        with:
-          modules-to-cache: ${{ steps.deps.outputs.modules }}
-
+      # No module cache here on purpose, and no separate PSDepend bootstrap.
+      #
+      # Measured on a sibling repository, same tree: ubuntu 27 seconds warm and
+      # 27 cold, macOS 16 and 26, Windows 28 and 50. The three jobs run in
+      # parallel, so the cache bought at most about 22 seconds of wall-clock.
+      # Against that it made pull-request runs warm and main runs cold, so a
+      # pull request could pass on a code path main never exercised.
+      #
+      # This also removes potatoqualitee/psmodulecache, which installed to the
+      # AllUsers path while build.depend.psd1 targets CurrentUser -- two copies
+      # of the binary Pester assembly on one machine, which Pester 6 cannot
+      # load. The steps that installed PSDepend and enumerated dependencies for
+      # that cache are gone too: build.ps1 -Bootstrap installs PSDepend itself
+      # and gates installation on Invoke-PSDepend -Test, so a runner that
+      # already satisfies the dependency file does no installation work.
       - name: Run tests
         shell: pwsh
         run: ./build.ps1 -Bootstrap -Task Test

@@ -78,12 +78,11 @@ BeforeAll {
     # Parse the version from the changelog
     $changelogPath = Join-Path -Path $Env:BHProjectPath -ChildPath 'CHANGELOG.md'
     $changelogVersionPattern = '^##\s\\?\[(?<Version>(\d+\.){1,3}\d+)\\?\]' # Matches on a line that starts with '## [Version]' or '## \[Version\]'
-    $changelogVersion = Get-Content $changelogPath | ForEach-Object {
-        if ($_ -match $changelogVersionPattern) {
-            $changelogVersion = $matches.Version
-            break
-        }
-    }
+    # Select-String returns the first matching line's named capture directly -- no loop
+    # and no 'break', which is unreliable inside ForEach-Object since a pipeline is not
+    # a loop: it exits the enclosing construct rather than stopping the pipeline.
+    $changelogVersion = (Select-String -Path $changelogPath -Pattern $changelogVersionPattern |
+        Select-Object -First 1).Matches[0].Groups['Version'].Value
 }
 Describe 'Module manifest' {
 

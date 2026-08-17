@@ -67,52 +67,115 @@ $dependencyFilePath = Join-Path -Path $PSScriptRoot -ChildPath $dependencyFilePa
 if ($Bootstrap) {
     $null = PackageManagement\Get-PackageProvider -Name 'NuGet' -ForceBootstrap
     if ((Test-Path -Path $dependencyFilePath)) {
-        # Ensure PSGallery is registered and trusted
-        if (-not (Get-PSRepository -Name 'PSGallery' -ErrorAction 'SilentlyContinue')) {
-            Register-PSRepository -Default
+        # Ensure PSGallery is registered and trusted.
+        #
+        # Register-PSRepository -Default shells out to nuget.exe, which on some Windows
+        # runner images fails with:
+        #
+        #   NuGet.Commands.CommandException: Missing option value for: '-source'
+        #
+        # That leaves PSGallery unregistered, and the Set-PSRepository call that used to
+        # follow it unconditionally then died with "No repository with the name
+        # 'PSGallery' was found", masking the real cause. Fall back to registering the
+        # gallery explicitly by URL, and only configure it once it actually exists.
+        $psGallery = Get-PSRepository -Name 'PSGallery' -ErrorAction 'SilentlyContinue'
+        if (-not $psGallery) {
+            try {
+                Register-PSRepository -Default -ErrorAction 'Stop'
+            }
+            catch {
+                Write-Verbose "Register-PSRepository -Default failed ($($_.Exception.Message)); registering PSGallery explicitly." -Verbose
+            }
+
+            $psGallery = Get-PSRepository -Name 'PSGallery' -ErrorAction 'SilentlyContinue'
+            if (-not $psGallery) {
+                $registerParameters = @{
+                    Name               = 'PSGallery'
+                    SourceLocation     = 'https://www.powershellgallery.com/api/v2'
+                    InstallationPolicy = 'Trusted'
+                    ErrorAction        = 'Stop'
+                }
+                Register-PSRepository @registerParameters
+                $psGallery = Get-PSRepository -Name 'PSGallery' -ErrorAction 'SilentlyContinue'
+            }
         }
-        Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
+
+        if (-not $psGallery) {
+            throw 'Could not register the PSGallery repository; build dependencies cannot be installed.'
+        }
+
+        if ($psGallery.InstallationPolicy -ne 'Trusted') {
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
+        }
 
         if (-not (Get-Module -Name 'PSDepend' -ListAvailable)) {
             Install-Module -Name 'PSDepend' -Scope 'CurrentUser' -Repository 'PSGallery' -Force
         }
         Import-Module -Name 'PSDepend' -Verbose:$false
 
-        # Try to import existing modules first to avoid installation locks
-        # Only install if import fails (missing modules or wrong versions)
         $psDependParameters = @{
             Path          = $PSScriptRoot
             Recurse       = $False
             WarningAction = 'SilentlyContinue'
-            Import        = $True
             Force         = $True
             ErrorAction   = 'Stop'
         }
 
-        $importSucceeded = $false
+        # Install before importing, never the other way round.
+        #
+        # This used to attempt an import first and only install if that failed, to avoid
+        # installation locks. That is safe on a warm cache, where the requested versions
+        # are already present, but wrong on a cold one: the import pass loads whatever
+        # version happens to be on the machine already -- typically an older Pester from
+        # the runner image -- and Pester ships a binary Pester.dll that cannot then be
+        # replaced in-process by the version the subsequent install brings in:
+        #
+        #   An incompatible version of the Pester.dll assembly is already loaded.
+        #   The loaded dll version is 5.9.0.0, but at least version 6.1.0 is required
+        #
+        # -Test reports whether each dependency is already satisfied without importing
+        # anything, so it is safe to run before anything is loaded (measured at ~6s here).
+        # Gate the install on it so a satisfied machine does no install work at all --
+        # -Install carries -Force, which re-resolves and re-downloads every dependency.
+        $dependenciesSatisfied = $false
         try {
-            Invoke-PSDepend @psDependParameters
-            $importSucceeded = $true
-            Write-Verbose 'Successfully imported existing modules.' -Verbose
+            $testResults = @(Invoke-PSDepend @psDependParameters -Test -Quiet)
+            $dependenciesSatisfied = $testResults.Count -gt 0 -and $testResults -notcontains $false
         }
         catch {
-            Write-Verbose "Could not import all required modules: $_" -Verbose
-            Write-Verbose 'Attempting to install missing or outdated dependencies...' -Verbose
+            Write-Verbose "Could not determine dependency status: $_" -Verbose
         }
 
-        # If import failed, install the dependencies
-        if (-not $importSucceeded) {
+        if (-not $dependenciesSatisfied) {
+            Write-Verbose 'Installing missing or outdated dependencies...' -Verbose
             try {
                 Invoke-PSDepend @psDependParameters -Install
             }
             catch {
-                Write-Error "Failed to install and import required dependencies: $_"
-                Write-Error 'This may be due to locked module files. Please restart the build environment or clear module locks.'
+                # Compose one message and throw it, rather than emitting several
+                # Write-Error calls: $ErrorActionPreference is 'Stop' in this script, so
+                # the first Write-Error terminates and every diagnostic after it -- the
+                # lock hint, the inner exception -- is silently dropped.
+                $installError = "Failed to install required dependencies: $($_.Exception.Message)"
                 if ($_.Exception.InnerException) {
-                    Write-Error "Inner exception: $($_.Exception.InnerException.Message)"
+                    $installError += " Inner exception: $($_.Exception.InnerException.Message)"
                 }
-                throw
+                $installError += ' This may be due to locked module files; restart the build environment or clear module locks.'
+                throw $installError
             }
+        }
+
+        try {
+            Invoke-PSDepend @psDependParameters -Import
+            Write-Verbose 'Successfully imported required modules.' -Verbose
+        }
+        catch {
+            # Single composed throw -- see the note in the install catch above.
+            $importError = "Failed to import required dependencies: $($_.Exception.Message)"
+            if ($_.Exception.InnerException) {
+                $importError += " Inner exception: $($_.Exception.InnerException.Message)"
+            }
+            throw $importError
         }
     }
     else {
