@@ -57,28 +57,29 @@ Follow [Semantic Versioning](https://semver.org/):
 
 ## Pre-Release Checklist
 
-Before creating a release:
+Follow `git-workflow.instructions.md` for branching and PR workflow. The steps below are
+release-specific:
 
 1. **Verify current release state**: Run `gh release list --limit 5` to check the most recent
    releases. Compare the latest released version against the version in CHANGELOG.md. If they
    match, the changelog version needs to be incremented. If the changelog is already ahead, use
    that version. NEVER release a version that already exists.
-1. **Check repository-specific instructions**: Review `repository-specific.instructions.md` for
+2. **Check repository-specific instructions**: Review `repository-specific.instructions.md` for
    any additional release requirements specific to this repository
-1. **Update CHANGELOG.md**: Add new version section with all changes
-1. **Update version numbers**: Bump version in relevant files as needed
-1. **Update changelog links**: Add comparison link for the new version at the bottom of
+3. **Update CHANGELOG.md**: Add new version section with all changes
+4. **Update version numbers**: Bump version in relevant files as needed
+5. **Update changelog links**: Add comparison link for the new version at the bottom of
    CHANGELOG.md (e.g., `[0.2.0]: https://github.com/owner/repo/compare/v0.1.0...v0.2.0`)
-1. **Run tests**: Ensure all tests pass
-1. **Commit changes**: Commit all version updates before creating the release
-1. **Push to remote**: Push commits to the repository
-1. **Create release**: Use the `gh release create` command with `--notes-file`
+6. **Run tests**: Ensure all tests pass
+7. **Commit changes**: Commit all version updates
+8. **Create PR and wait for merge**: Follow the PR workflow in `git-workflow.instructions.md`
+9. **Create release**: After PR is merged, use `gh release create` with `--notes-file`
 
 ## Post-Release
 
 After creating a release:
 
 1. Verify the release appears correctly on GitHub
-1. Check that release notes display properly (no formatting issues)
-1. Confirm download links work if applicable
-1. Notify team members if this is a significant release
+2. Check that release notes display properly (no formatting issues)
+3. Confirm download links work if applicable
+4. Notify team members if this is a significant release
