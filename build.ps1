@@ -107,11 +107,29 @@ if ($Bootstrap) {
         # A repository named PSGallery is not necessarily the PowerShell Gallery. If one
         # is already registered against a different SourceLocation, every dependency in
         # build.depend.psd1 would be installed from it on the strength of the name alone.
-        # Refuse rather than trust the name.
-        $expectedSourceLocation = 'https://www.powershellgallery.com/api/v2'
-        $actualSourceLocation = $psGallery.SourceLocation.TrimEnd('/')
-        if ($actualSourceLocation -ne $expectedSourceLocation.TrimEnd('/')) {
-            throw "The repository named 'PSGallery' points at [$actualSourceLocation], not [$expectedSourceLocation]. Refusing to install build dependencies from an unexpected source."
+        #
+        # Compare the parsed URI's scheme, host and port rather than the string:
+        #
+        #   - String equality with -ne is case-insensitive, so a differently cased value
+        #     slipped through. Switching to -cne would be wrong in the other direction,
+        #     since host names are case-insensitive by definition and -cne would reject
+        #     https://WWW.PowerShellGallery.com/api/v2, which is the real gallery.
+        #   - Port matters: a non-default port on the same name reaches a different
+        #     listener. [Uri] supplies 443 for https when none is given, so the canonical
+        #     URL and an explicit :443 both match, while :444 does not.
+        #   - The path is deliberately not compared. The gallery serves both /api/v2 and
+        #     /api/v3, and any path on the genuine host is still the genuine host. Host
+        #     and port are the trust boundary; pinning the path would only add a false
+        #     rejection for a legitimate registration.
+        $expectedSource = [Uri]'https://www.powershellgallery.com/api/v2'
+        $actualSource = $psGallery.SourceLocation -as [Uri]
+        $sourceIsExpected = $null -ne $actualSource -and
+            $actualSource.Scheme -eq $expectedSource.Scheme -and
+            $actualSource.Host -eq $expectedSource.Host -and
+            $actualSource.Port -eq $expectedSource.Port
+        if (-not $sourceIsExpected) {
+            $expectedAuthority = '{0}://{1}:{2}' -f $expectedSource.Scheme, $expectedSource.Host, $expectedSource.Port
+            throw "The repository named 'PSGallery' points at [$($psGallery.SourceLocation)], which is not $expectedAuthority. Refusing to install build dependencies from an unexpected source."
         }
 
         if ($psGallery.InstallationPolicy -ne 'Trusted') {
