@@ -19,7 +19,12 @@ reviews:
     # -- re-sync from upstream instead -- so a review comment here is an
     # instruction to do the one thing that is not allowed. Their own repository
     # maintains them.
-    - "!.agents/skills/**"
+    #
+    # The skill folders only. .agents/skills/NOTICE.md is ours: we write the
+    # attribution, and a review of it caught the license link still pointing at
+    # a moving branch while the skills were pinned to a tag.
+    - "!.agents/skills/psake/**"
+    - "!.agents/skills/powershellbuild/**"
 
     # Instruction modules synced from tablackburn/ai-agent-instruction-modules.
     # That repository has CodeRabbit installed and reviews every human PR, so
