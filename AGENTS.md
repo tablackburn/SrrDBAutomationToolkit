@@ -2,9 +2,9 @@
 
 AI agents working in this repository must follow these instructions.
 
-Template Version: 0.8.1
+Template Version: 0.11.0
 
-Last sync: 2025-12-29
+Last sync: 2026-08-18
 
 ## Instructions for AI Agents
 
@@ -16,7 +16,7 @@ AI agents **must**:
 1. **Read `instructions/agent-workflow.instructions.md` FIRST to determine which other instruction
    files apply to your task.** Follow all applicable instructions before proceeding with work.
 
-1. **Check `aim.config.json`** for module configuration and external source settings.
+1. **Check `aim.config.json`** for module configuration, external source, and skill dependency settings.
 
 ## Instruction Applicability Matrix
 
@@ -28,6 +28,7 @@ Use this matrix to determine which instruction files to read based on your task:
 | Any code or documentation    | `shorthand.instructions.md`            |
 | Git operations               | `git-workflow.instructions.md`         |
 | Writing tests                | `testing.instructions.md`              |
+| Build, test, or publish (psake / PowerShellBuild) | `.agents/skills/psake/SKILL.md`, `.agents/skills/powershellbuild/SKILL.md` |
 | PowerShell code              | `powershell.instructions.md`           |
 | Documentation                | `markdown.instructions.md`             |
 | README files                 | `readme.instructions.md`               |
@@ -70,3 +71,21 @@ Use this matrix to determine which instruction files to read based on your task:
 ## Repository-Specific Instructions
 
 See `instructions/repository-specific.instructions.md` for customizations specific to this repository.
+
+## Skill Dependencies
+
+This repository vendors Agent Skills (the open [Agent Skills](https://agentskills.io) `SKILL.md`
+standard) under `.agents/skills/` - the cross-client convention - so they travel with the
+repository and any agent can use them. Provenance and pinned versions are recorded in
+`aim.config.json` under `skills`.
+
+| Skill             | Location                                  | Use for                                                                                          |
+| ----------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `psake`           | `.agents/skills/psake/SKILL.md`           | Authoring and troubleshooting psake build scripts (`build.psake.ps1`, tasks, dependencies)       |
+| `powershellbuild` | `.agents/skills/powershellbuild/SKILL.md` | PowerShellBuild module build/test/publish (`build.ps1`, PSBPreference, Pester, PSScriptAnalyzer) |
+
+These skills are routed from the Instruction Applicability Matrix above. Because Claude Code reads
+`CLAUDE.md` rather than `AGENTS.md`, the repository's `CLAUDE.md` imports this file (`@AGENTS.md`)
+to carry the routing into Claude Code. The skills are vendored from `psake/psake-llm-tools` (MIT)
+at the version pinned in `aim.config.json`; re-sync from upstream rather than editing the vendored
+copies. See `.agents/skills/NOTICE.md` for attribution.

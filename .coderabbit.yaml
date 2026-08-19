@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# Keep review attention on this repository's own code.
+#
+# Two directories here hold content that is copied in from elsewhere, and a
+# finding against either of them cannot be fixed here -- the fix has to land
+# upstream and arrive on the next sync. Reviewing them downstream produces
+# comments nobody can action, multiplied by every repository in the fleet: one
+# AIM sync generated 115 inline comments, of which 109 were against copied
+# content and 6 against anything this repository actually owns.
+#
+# Only exclusions are listed. Adding an inclusion pattern would turn this into
+# an allowlist and silently stop everything else from being reviewed.
+reviews:
+  path_filters:
+    # Agent Skills vendored verbatim from psake/psake-llm-tools, pinned in
+    # aim.config.json. .agents/skills/NOTICE.md and step 7.2 of
+    # instructions/update.instructions.md both say never to edit these in place
+    # -- re-sync from upstream instead -- so a review comment here is an
+    # instruction to do the one thing that is not allowed. Their own repository
+    # maintains them.
+    #
+    # The skill folders only. .agents/skills/NOTICE.md is ours: we write the
+    # attribution, and a review of it caught the license link still pointing at
+    # a moving branch while the skills were pinned to a tag.
+    - "!.agents/skills/psake/**"
+    - "!.agents/skills/powershellbuild/**"
+
+    # Instruction modules synced from tablackburn/ai-agent-instruction-modules.
+    # That repository has CodeRabbit installed and reviews every human PR, so
+    # this content is already reviewed where it lives and where it can be
+    # changed. Listed file by file on purpose: repository-specific.instructions.md
+    # is NEVER copied from upstream, is genuinely local, and stays reviewed.
+    - "!instructions/agent-workflow.instructions.md"
+    - "!instructions/contributing.instructions.md"
+    - "!instructions/git-workflow.instructions.md"
+    - "!instructions/github-cli.instructions.md"
+    - "!instructions/markdown.instructions.md"
+    - "!instructions/powershell.instructions.md"
+    - "!instructions/readme.instructions.md"
+    - "!instructions/releases.instructions.md"
+    - "!instructions/shorthand.instructions.md"
+    - "!instructions/testing.instructions.md"
+    - "!instructions/update.instructions.md"

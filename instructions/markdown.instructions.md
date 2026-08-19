@@ -26,7 +26,7 @@ Consistent Markdown formatting for documentation files.
 ## Lists
 
 - Use `-` for unordered lists
-- Use `1.` for ordered lists (let markdown handle numbering)
+- Use sequential numbering for ordered lists (`1.`, `2.`, `3.`, etc.)
 - Use 2 spaces for nested list indentation
 
 ```markdown
@@ -47,6 +47,8 @@ Text after list.
 - Always specify language for fenced code blocks
 - Ensure closing triple backticks are on their own line
 - No trailing whitespace after closing backticks
+- Code inside fenced blocks should follow the conventions of the relevant language's instruction
+  file (e.g., PowerShell snippets follow `powershell.instructions.md`)
 
 ```javascript
 // JavaScript code here

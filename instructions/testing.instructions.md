@@ -7,6 +7,17 @@ description: 'Test writing best practices and conventions'
 
 Language-agnostic guidelines for writing effective tests.
 
+## Discovering Existing Test Tooling
+
+Before creating scripts for test-related tasks (running tests, gathering coverage, generating reports):
+
+1. **Check for build systems** - Look for `Makefile`, `build.ps1`, `package.json` scripts, `tox.ini`,
+   `pyproject.toml`, or similar build configuration files
+2. **Search README and CI configs** - Existing commands are often documented or visible in CI workflows
+3. **Ask the user** - If unsure whether tooling exists, ask before creating anything new
+
+**Never create new scripts when existing build tooling already handles the task.**
+
 ## Test Structure
 
 ### Arrange-Act-Assert (AAA)
@@ -245,15 +256,61 @@ adminUser = createTestUser({ role: "admin" })
 Prioritize testing:
 
 1. Business-critical functionality
-1. Error handling and edge cases
-1. Security-sensitive code
-1. Complex algorithms
+2. Error handling and edge cases
+3. Security-sensitive code
+4. Complex algorithms
 
 ### Coverage Goals
 
 - Aim for meaningful coverage, not 100%
 - High coverage doesn't guarantee quality
 - Focus on testing behavior, not implementation details
+
+## Bug Fix Testing
+
+### Test-First Bug Fixing
+
+When fixing a bug, always follow this workflow:
+
+1. **Write a failing test first** - Create at least one test that reproduces the bug
+2. **Verify the test fails** - Confirm the test fails for the expected reason
+3. **Fix the bug** - Implement the minimal fix to make the test pass
+4. **Verify all tests pass** - Ensure both the new test and existing tests pass
+
+**Example workflow:**
+
+```text
+# 1. Create test that exposes the bug
+test_calculateDiscount_withZeroQuantity_returnsZero()
+    # This test fails because of the bug
+
+# 2. Run tests - confirm failure
+> npm test
+FAIL: calculateDiscount returns NaN instead of 0
+
+# 3. Fix the bug in the source code
+
+# 4. Run tests - confirm fix
+> npm test
+PASS: All tests passing
+```
+
+### Why Test-First Matters
+
+- **Proves the bug exists** - The failing test documents the exact issue
+- **Prevents regressions** - The test ensures the bug won't return
+- **Validates the fix** - You know the fix works when the test passes
+- **Documents behavior** - Future developers understand the expected behavior
+
+### Bug Test Naming
+
+Name bug-related tests to indicate the scenario being fixed:
+
+```text
+calculateTotal_withNullItems_returnsZeroInsteadOfCrashing
+parseDate_withLeapYear_handlesFebruary29Correctly
+userAuth_withExpiredToken_returnsUnauthorizedNotServerError
+```
 
 ## Running Tests
 
