@@ -5,7 +5,7 @@ redistributed under their original license.
 
 - Source: <https://github.com/psake/psake-llm-tools>
 - Version: v2.2.0
-- License: MIT (see <https://github.com/psake/psake-llm-tools/blob/main/LICENSE>)
+- License: MIT (see <https://github.com/psake/psake-llm-tools/blob/v2.2.0/LICENSE>)
 - Skills:
   - `psake` — from `plugins/psake/skills/psake`
   - `powershellbuild` — from `plugins/powershellbuild/skills/powershellbuild`
