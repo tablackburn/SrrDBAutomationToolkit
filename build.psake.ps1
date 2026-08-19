@@ -10,6 +10,16 @@ properties {
     # Set this to $true to create a module with a monolithic PSM1
     $PSBPreference.Build.CompileModule = $false
     $PSBPreference.Help.DefaultLocale = 'en-US'
+    # Point PSScriptAnalyzer at this repository's settings file.
+    #
+    # PowerShellBuild's default SettingsPath is
+    # Join-Path $PSScriptRoot 'ScriptAnalyzerSettings.psd1' where $PSScriptRoot is
+    # PowerShellBuild's own module directory -- so without this line the analyzer
+    # runs against the settings bundled with PowerShellBuild and the
+    # PSScriptAnalyzerSettings.psd1 in this repository is never read. Note the
+    # filenames differ too, so the default cannot pick it up by accident.
+    $PSBPreference.Test.ScriptAnalysis.SettingsPath =
+        Join-Path -Path $PSScriptRoot -ChildPath 'PSScriptAnalyzerSettings.psd1'
     # Use absolute paths for test output (relative paths resolve from tests directory)
     $PSBPreference.Test.OutputFile = [IO.Path]::Combine($PSScriptRoot, 'out', 'testResults.xml')
     $PSBPreference.Test.OutputFormat = 'NUnitXml'
